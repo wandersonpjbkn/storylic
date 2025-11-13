@@ -107,9 +107,8 @@ export const useSettingStore = defineStore('settings', () => {
   const finishTurn = () => {
     stopTimerTurn()
     startTimerStory()
-    gameState.value = 'storytelling'
 
-    // call storeSocket.selectedCards()
+    gameState.value = 'storytelling'
   }
   const startPlayerTurn = () => {
     gameState.value = 'playing'
@@ -151,18 +150,26 @@ export const useSettingStore = defineStore('settings', () => {
 
   return {
     // state
+
+    /** base */
     gameState,
     numPlayers,
+    baseTimerTurn,
+    baseTimerStory,
+
+    /** player */
     playerName,
     currentPlayer,
+
+    /** turn */
     turnCurrent,
     turnMax,
+
+    /** timers */
     timerTurn,
-    baseTimerTurn,
     timerStory,
-    baseTimerStory,
     isTurnRunning,
-    timerTurnInterval,
+    isStoryRunning,
 
     // getters
     timerThreshold,
@@ -175,6 +182,7 @@ export const useSettingStore = defineStore('settings', () => {
 
     /** timers */
     stopTimerTurn,
+    stopTimerStory,
 
     /** turns */
     finishTurn,

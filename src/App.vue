@@ -30,7 +30,7 @@ onUnmounted(() => {
 watch(gameState, (state) => {
   switch (state) {
     case 'ended':
-      router.push({ name: 'end-view' })
+      router.push({ name: 'ended-view' })
       break
 
     case 'storytelling':
@@ -58,8 +58,13 @@ watch(gameState, (state) => {
 </script>
 
 <template>
-  <router-view />
-  <TheNotification />
+  <div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 p-8">
+    <div class="max-w-4xl mx-auto">
+      <router-view />
+    </div>
+  </div>
+
+  <the-notification />
 </template>
 
 <style lang="scss">
