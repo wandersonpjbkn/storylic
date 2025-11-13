@@ -66,13 +66,6 @@ watch(timerTurn, (value) => {
   <!-- actions -->
   <div class="flex gap-4">
     <button
-      class="flex-1 bg-red-500 hover:bg-red-900 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
-      @click="storeSettings.stopTimerTurn"
-    >
-      Abortar
-    </button>
-
-    <button
       class="flex-1 bg-white/20 hover:bg-white/30 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
       @click="storeCards.shuffleDisplayedCards"
     >
