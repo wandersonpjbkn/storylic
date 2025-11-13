@@ -20,9 +20,7 @@ const storeCards = useCardsStore()
 
 useSeo({
   title: 'Jogando',
-  titleTemplate: '%s | Storylic | Clube Ecos Literários',
   description: 'Selecione seus cards, corra antes que o tempo acabe',
-  robots: 'noindex, nofollow, noarchive, nosnippet, noodp',
 })
 
 const timerTurn = computed(() => {

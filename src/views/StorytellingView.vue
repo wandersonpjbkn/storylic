@@ -13,9 +13,7 @@ const storeSettings = useSettingStore()
 
 useSeo({
   title: 'Contando histórias',
-  titleTemplate: '%s | Storylic | Clube Ecos Literários',
   description: 'Deixe sua imaginação voar',
-  robots: 'noindex, nofollow, noarchive, nosnippet, noodp',
 })
 
 const timerStory = computed(() => {
