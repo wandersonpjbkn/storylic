@@ -17,9 +17,7 @@ const submit = ref<HTMLButtonElement | null>(null)
 
 useSeo({
   title: 'Lobby',
-  titleTemplate: '%s | Storylic | Clube Ecos Literários',
   description: 'Vamos começar a jogar?',
-  robots: 'noindex, nofollow, noarchive, nosnippet, noodp',
 })
 
 onMounted(() => {
