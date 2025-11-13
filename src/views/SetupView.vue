@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import { computed } from 'vue'
-
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 

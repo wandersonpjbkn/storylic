@@ -7,10 +7,10 @@ import { useSettingStore } from '@/stores/settings'
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 
-const submit = ref(null)
+const submit = ref<HTMLButtonElement | null>(null)
 
 onMounted(() => {
-  submit.value.focus()
+  if (submit.value) submit.value.focus()
 })
 </script>
 

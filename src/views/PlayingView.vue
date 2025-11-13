@@ -7,6 +7,8 @@ import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
 
+type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
+
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 const storeCards = useCardsStore()
@@ -60,7 +62,7 @@ const finishTurn = () => {
           :key="index"
           :class="[
             'relative bg-gradient-to-br rounded-2xl p-8 transition-all transform hover:scale-105',
-            storeSettings.getCategoryColor(card.category),
+            storeSettings.getCategoryColor(card.category as Category),
             storeCards.isCardSelected(card) ? 'ring-4 ring-white scale-105' : '',
           ]"
           @click="storeCards.toggleCardSelection(card)"
@@ -83,7 +85,7 @@ const finishTurn = () => {
           :key="index"
           :class="[
             'bg-gradient-to-br rounded-xl p-6 text-center',
-            storeSettings.getCategoryColor(card.category),
+            storeSettings.getCategoryColor(card.category as Category),
           ]"
           @click="storeCards.toggleCardSelection(card)"
         >

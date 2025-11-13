@@ -15,7 +15,7 @@ const storeSocket = useSocketStore()
 
         <button
           class="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-12 py-4 rounded-xl font-bold text-xl hover:from-pink-600 hover:to-purple-600 transition-all shadow-lg inline-flex items-center gap-2"
-          @click="storeSocket.emitRestartGame"
+          @click="storeSocket.emitResetGame"
         >
           <Reload />
           Jogar Novamente

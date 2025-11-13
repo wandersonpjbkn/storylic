@@ -48,7 +48,11 @@ export const useSettingStore = defineStore('settings', () => {
 
   /** style */
   const getCategoryColor = (category: Category) => {
-    return categoriesColors.value[category] || 'from-gray-500 to-gray-700'
+    if (Object.prototype.hasOwnProperty.call(categoriesColors.value, category)) {
+      return categoriesColors.value[category as Category]
+    }
+
+    return 'from-gray-500 to-gray-700'
   }
 
   /** timers */
