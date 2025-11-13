@@ -41,24 +41,45 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value = io(serverUrl.value)
 
     socket.value.on('connect', () => {
-      console.log('Conectado ao servidor!')
+      storeGlobal.openNotification({
+        title: 'Conectado',
+        message: 'Conectado ao servidor!',
+        type: 'success',
+        duration: 2000,
+      })
 
       isConnected.value = true
     })
 
     socket.value.on('disconnect', () => {
-      console.log('Desconectado do servidor')
+      storeGlobal.openNotification({
+        title: 'Desconectado',
+        message: 'Desconectado ao servidor!',
+        type: 'error',
+      })
 
       isConnected.value = false
     })
 
     socket.value.on('game-started', (game) => {
-      console.log('Jogo iniciado!', game)
+      storeGlobal.openNotification({
+        title: 'Bom jogo',
+        message: 'Jogo iniciado!',
+        type: 'success',
+      })
+      console.log('jogo iniciado', game)
+
       storeSettings.gameState = 'waiting'
     })
 
     socket.value.on('game-state', ({ currentPlayer, players }) => {
-      console.log('Sala atualizada', players)
+      storeGlobal.openNotification({
+        title: 'Sala atualizada',
+        message:
+          storeSettings.numPlayers > players.length ? 'Um jogador saiu' : 'Novo jogador na sala',
+        type: storeSettings.numPlayers > players.length ? 'warning' : 'info',
+      })
+      console.log('sala atualizada', players)
 
       storeSettings.numPlayers = players.length
       currentPlayerNumber.value = currentPlayer
@@ -138,6 +159,12 @@ export const useSocketStore = defineStore('socket', () => {
       gameId: gameId.value,
     })
   }
+  const emitLeaveGame = () => {
+    socket.value?.emit('leave-game', {
+      gameId: gameId.value,
+      playerNumber: myPlayerNumber.value,
+    })
+  }
 
   return {
     //state
@@ -159,5 +186,6 @@ export const useSocketStore = defineStore('socket', () => {
     emitSelectedCards,
     emitFinishStoryAndNext,
     emitResetGame,
+    emitLeaveGame,
   }
 })

@@ -30,9 +30,10 @@ watch(timerStory, (value) => {
     <!-- timer -->
     <div class="bg-white/5 rounded-xl p-6 mb-6">
       <p class="text-white/80 text-center mb-2">
-        Jogador {{ storeSocket.myPlayerName }} - Turno {{ storeSettings.turnCurrent }}/{{
+        Jogador [ {{ storeSocket.myPlayerName }} ] - Turno [ {{ storeSettings.turnCurrent }}/{{
           storeSettings.turnMax
         }}
+        ]
       </p>
       <p class="text-white text-center text-lg">
         Você tem
@@ -51,7 +52,7 @@ watch(timerStory, (value) => {
     </div>
 
     <!-- selected cards -->
-    <the-selected-cards />
+    <the-selected-cards class="mb-8" />
 
     <!-- actions -->
     <div class="text-center">

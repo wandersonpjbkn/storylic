@@ -39,7 +39,7 @@ watch(timerTurn, (value) => {
 
       <!-- timer -->
       <div class="flex items-center gap-3">
-        <Clock />
+        <Clock class="text-white" />
         <span
           :class="[
             'text-3xl font-bold',
@@ -52,16 +52,16 @@ watch(timerTurn, (value) => {
 
       <!-- turn -->
       <div class="text-white text-xl font-semibold">
-        Turno {{ storeSettings.turnCurrent }}/{{ storeSettings.turnMax }}
+        Turno [ {{ storeSettings.turnCurrent }}/{{ storeSettings.turnMax }} ]
       </div>
     </div>
   </div>
 
   <!-- cards to select -->
-  <the-displayed-cards />
+  <the-displayed-cards class="mb-6" />
 
   <!-- selected cards -->
-  <the-selected-cards />
+  <the-selected-cards v-if="storeCards.canConfirm" class="mb-8" />
 
   <!-- actions -->
   <div class="flex gap-4">

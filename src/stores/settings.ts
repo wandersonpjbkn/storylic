@@ -15,8 +15,8 @@ export const useSettingStore = defineStore('settings', () => {
 
   /** base */
   const gameState = ref('setup')
-  const numPlayers = ref(3)
-  const baseTimerTurn = ref(30)
+  const numPlayers = ref(0)
+  const baseTimerTurn = ref(25)
   const baseTimerStory = ref(45)
   const categoriesColors = ref(colors)
 
@@ -108,6 +108,7 @@ export const useSettingStore = defineStore('settings', () => {
     startTimerStory()
 
     if (!storeCard.canConfirm) {
+      storeCard.dealCards()
       storeCard.selectedCards = storeCard.displayedCards
     }
 
