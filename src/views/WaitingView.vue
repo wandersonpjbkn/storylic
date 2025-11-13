@@ -4,8 +4,15 @@ import ThePlayer from '@/components/ThePlayer.vue'
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 
+import { useSeo } from '@/composables/useSeo'
+
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
+
+useSeo({
+  title: 'Sala de espera',
+  description: 'Aguarde sua vez de jogar',
+})
 </script>
 
 <template>

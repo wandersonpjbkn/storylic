@@ -1,0 +1,25 @@
+{
+  "titleTemplate": "%s | Storylic | Clube Ecos Literários",
+  "ogTitle": "Storylic | Clube Ecos Literários",
+  "ogDescription": "Prepare a sua mão e comece a criar mundos incríveis!",
+  "twitterTitle": "Storylic | Clube Ecos Literários",
+  "twitterDescription": "Prepare a sua mão e comece a criar mundos incríveis, com mais de 200 cards aleatórios para você!",
+  "twitterSite": "https://storylic.onrender.com",
+  "twitterCreator": "Wanderson PJ",
+  "ogImage": {
+    "url": "https://storylic.onrender.com/img/storylic-background.png",
+    "width": 1024,
+    "height": 1024,
+    "alt": "Storylic | Clube Ecos Literários",
+    "type": "image/png"
+  },
+  "twitterImage": {
+    "url": "https://storylic.onrender.com/img/storylic-background.png",
+    "width": 1024,
+    "height": 1024,
+    "alt": "Storylic | Clube Ecos Literários",
+    "type": "image/png"
+  },
+  "twitterCard": "Biblioteca com cards voando pelo interior da sala, um grande livro aberto no meio da sala com as cartas acima dele",
+  "robots": "noindex, nofollow, noarchive, nosnippet, noodp"
+}

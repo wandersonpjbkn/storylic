@@ -1,11 +1,20 @@
 <script lang="ts" setup>
+import Favicon from '@/assets/icons/Favicon.vue'
+
 import TheRoomRules from '@/components/TheRoomRules.vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 
+import { useSeo } from '@/composables/useSeo'
+
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
+
+useSeo({
+  title: 'Home',
+  description: 'Crie histórias incríveis com cartas aleatórias!',
+})
 </script>
 
 <template>
@@ -13,8 +22,14 @@ const storeSettings = useSettingStore()
     class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20"
     @submit.prevent="storeSocket.emitJoinGame"
   >
-    <h1 class="text-4xl font-bold text-white mb-2 text-center">Storylic</h1>
-    <p class="text-white/80 text-center mb-8">Crie histórias incríveis com cartas aleatórias!</p>
+    <div class="flex justify-center items-center gap-3 mb-2">
+      <Favicon class="w-16 h-16" />
+      <h1 class="text-4xl font-bold text-white text-center">Storylic</h1>
+    </div>
+
+    <p class="text-white/80 text-center mb-8">
+      Prepare a sua mão e comece a criar mundos incríveis!
+    </p>
 
     <!-- connection status -->
     <div class="mb-6">

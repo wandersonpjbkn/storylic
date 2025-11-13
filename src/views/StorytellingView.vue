@@ -6,8 +6,17 @@ import TheSelectedCards from '@/components/TheSelectedCards.vue'
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 
+import { useSeo } from '@/composables/useSeo'
+
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
+
+useSeo({
+  title: 'Contando histórias',
+  titleTemplate: '%s | Storylic | Clube Ecos Literários',
+  description: 'Deixe sua imaginação voar',
+  robots: 'noindex, nofollow, noarchive, nosnippet, noodp',
+})
 
 const timerStory = computed(() => {
   return storeSettings.timerStory
