@@ -25,6 +25,8 @@ export default defineConfig({
         name: 'Storylic',
         short_name: 'Storylic',
         description: 'Crie histórias incríveis com cartas aleatórias!',
+        start_url: '/',
+        display: 'standalone',
         theme_color: '#8b5cf6',
         background_color: '#e64893',
         icons: [
