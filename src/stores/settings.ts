@@ -107,6 +107,10 @@ export const useSettingStore = defineStore('settings', () => {
     stopTimerTurn()
     startTimerStory()
 
+    if (!storeCard.canConfirm) {
+      storeCard.selectedCards = storeCard.displayedCards
+    }
+
     gameState.value = 'storytelling'
   }
   const startPlayerTurn = () => {
