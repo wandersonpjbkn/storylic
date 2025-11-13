@@ -56,7 +56,7 @@ watch(timerStory, (value) => {
     <!-- actions -->
     <div class="text-center">
       <button
-        class="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-12 py-4 rounded-xl font-bold text-xl hover:from-pink-600 hover:to-purple-600 transition-all shadow-lg"
+        class="bg-linear-to-r from-pink-500 to-purple-500 text-white px-12 py-4 rounded-xl font-bold text-xl hover:from-pink-600 hover:to-purple-600 transition-all shadow-lg"
         @click="finishStoryAndNext"
       >
         Terminar vez

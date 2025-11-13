@@ -14,7 +14,7 @@ const storeCards = useCardsStore()
       v-for="(card, index) in storeCards.selectedCards"
       :key="index"
       :class="[
-        'bg-gradient-to-br rounded-xl p-6 text-center',
+        'bg-linear-to-br rounded-xl p-6 text-center',
         storeSettings.getCategoryColor(card.category as Category),
       ]"
     >

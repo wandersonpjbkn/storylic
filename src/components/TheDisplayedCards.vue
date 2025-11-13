@@ -14,7 +14,7 @@ const storeCards = useCardsStore()
       v-for="(card, index) in storeCards.displayedCards"
       :key="index"
       :class="[
-        'relative bg-gradient-to-br rounded-2xl p-8 transition-all transform hover:scale-105',
+        'relative bg-linear-to-br rounded-2xl p-8 transition-all transform hover:scale-105',
         storeSettings.getCategoryColor(card.category as Category),
         storeCards.isCardSelected(card) ? 'ring-4 ring-white scale-105' : '',
       ]"

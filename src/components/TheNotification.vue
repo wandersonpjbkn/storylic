@@ -51,7 +51,7 @@ watch(notification, ({ message }) => {
           <!-- Icon -->
           <div
             :class="[
-              'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center',
+              'shrink-0 w-10 h-10 rounded-full flex items-center justify-center',
               notification.type === 'success' ? 'bg-green-500/20' : '',
               notification.type === 'error' ? 'bg-red-500/20' : '',
               notification.type === 'warning' ? 'bg-yellow-500/20' : '',
@@ -72,7 +72,7 @@ watch(notification, ({ message }) => {
 
           <!-- Close Button -->
           <button
-            class="flex-shrink-0 text-white/60 hover:text-white transition-colors"
+            class="shrink-0 text-white/60 hover:text-white transition-colors"
             @click="storeGlobal.closeNotification"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
