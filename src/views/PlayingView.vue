@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { computed, watch } from 'vue'
+
 import Clock from '@/assets/icons/Clock.vue'
 import Shuffle from '@/assets/icons/Shuffle.vue'
 
@@ -14,10 +16,18 @@ const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 const storeCards = useCardsStore()
 
+const timerTurn = computed(() => {
+  return storeSettings.timerTurn
+})
+
 const finishTurn = () => {
   storeSettings.finishTurn()
   storeSocket.emitSelectedCards()
 }
+
+watch(timerTurn, (value) => {
+  if (value <= 0) finishTurn()
+})
 </script>
 
 <template>
@@ -33,12 +43,10 @@ const finishTurn = () => {
         <span
           :class="[
             'text-3xl font-bold',
-            storeSettings.timerTurn <= storeSettings.timerThreshold
-              ? 'text-red-400 animate-pulse'
-              : 'text-white',
+            timerTurn <= storeSettings.timerThreshold ? 'text-red-400 animate-pulse' : 'text-white',
           ]"
         >
-          {{ storeSettings.timerTurn }}s
+          {{ timerTurn }}s
         </span>
       </div>
 
