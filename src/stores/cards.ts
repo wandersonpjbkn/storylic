@@ -9,7 +9,15 @@ import objects from '@/data/categories/objects.json'
 import personas from '@/data/categories/personas.json'
 import places from '@/data/categories/places.json'
 
-type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
+type Category =
+  | 'actions'
+  | 'animals'
+  | 'emotions'
+  | 'nature'
+  | 'objects'
+  | 'personas'
+  | 'places'
+  | string
 interface Card {
   name: string
   category: Category
@@ -62,11 +70,12 @@ export const useCardsStore = defineStore('cards', () => {
     }
   }
   const shuffleArray = (array: Card[]) => {
-    const newArray = [...array]
+    let newArray = [...array]
 
     for (let i = newArray.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
-      ;[newArray[i], newArray[j]] = [newArray[j], newArray[i]]
+
+      newArray = [newArray[i], newArray[j]] = [newArray[j]!, newArray[i]!]
     }
 
     return newArray

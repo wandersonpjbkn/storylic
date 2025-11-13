@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 interface Notification {
@@ -34,7 +34,7 @@ export const useGlobalStore = defineStore('global', () => {
     message,
   }: Notification) => {
     notification.value = {
-      show: true,
+      show,
       title,
       type,
       message,

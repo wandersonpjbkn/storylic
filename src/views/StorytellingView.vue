@@ -3,6 +3,8 @@ import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
 
+type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
+
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 const storeCards = useCardsStore()
@@ -46,7 +48,7 @@ const storeCards = useCardsStore()
             :key="index"
             :class="[
               'bg-gradient-to-br rounded-xl p-6 text-center',
-              storeSettings.getCategoryColor(card.category),
+              storeSettings.getCategoryColor(card.category as Category),
             ]"
           >
             <div class="text-white/70 text-sm font-semibold mb-1">{{ card.category }}</div>
