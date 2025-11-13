@@ -18,6 +18,7 @@ type Category =
   | 'personas'
   | 'places'
   | string
+
 interface Card {
   name: string
   category: Category
@@ -69,25 +70,24 @@ export const useCardsStore = defineStore('cards', () => {
       selectedCards.value.push(card)
     }
   }
-  const shuffleArray = (array: Card[]) => {
-    let newArray = [...array]
-
+  const shuffleArray = (array: Card[]): Card[] => {
+    const newArray = [...array]
     for (let i = newArray.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
+      const temp = newArray[i]
 
-      newArray = [newArray[i], newArray[j]] = [newArray[j]!, newArray[i]!]
+      if (newArray[j]) newArray[i] = newArray[j]
+      if (temp) newArray[j] = temp
     }
-
     return newArray
   }
   const initializeDeck = () => {
     const allCards: Card[] = []
-
     Object.entries(categories.value).forEach(([category, cards]) => {
       cards.forEach((card: string) => {
         allCards.push({
           name: card,
-          category,
+          category: category as Category,
         })
       })
     })
@@ -100,6 +100,7 @@ export const useCardsStore = defineStore('cards', () => {
     availableCards,
     displayedCards,
     selectedCards,
+    categories,
 
     // getters
     canConfirm,

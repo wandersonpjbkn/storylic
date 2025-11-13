@@ -1,6 +1,6 @@
 import {
   createRouter,
-  createWebHashHistory,
+  createWebHistory,
   type RouteLocationNormalized,
   type NavigationGuardNext,
 } from 'vue-router'
@@ -13,16 +13,16 @@ const validateGameState = (
   to: RouteLocationNormalized,
   from: RouteLocationNormalized,
   next: NavigationGuardNext,
-  state: string,
 ) => {
   const storeSettings = useSettingStore()
+  const [, state] = to.path.split('/')
 
   if (storeSettings.gameState === state) next()
   else next({ name: 'setup-view' })
 }
 
 const router = createRouter({
-  history: createWebHashHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       name: 'setup-view',
@@ -33,41 +33,36 @@ const router = createRouter({
       name: 'lobby-view',
       path: '/lobby',
       component: import('@/views/LobbyView.vue'),
-      beforeEnter: (to, from, next) => {
-        validateGameState(to, from, next, 'lobby')
-      },
+      beforeEnter: validateGameState,
     },
     {
       name: 'waiting-view',
       path: '/waiting',
       component: import('@/views/WaitingView.vue'),
-      beforeEnter: (to, from, next) => {
-        validateGameState(to, from, next, 'waiting')
-      },
+      beforeEnter: validateGameState,
     },
     {
       name: 'playing-view',
       path: '/playing',
       component: import('@/views/PlayingView.vue'),
-      beforeEnter: (to, from, next) => {
-        validateGameState(to, from, next, 'playing')
-      },
+      beforeEnter: validateGameState,
     },
     {
       name: 'storytelling-view',
       path: '/storytelling',
       component: import('@/views/StorytellingView.vue'),
-      beforeEnter: (to, from, next) => {
-        validateGameState(to, from, next, 'storytelling')
-      },
+      beforeEnter: validateGameState,
     },
     {
-      name: 'end-view',
-      path: '/end',
-      component: import('@/views/EndView.vue'),
-      beforeEnter: (to, from, next) => {
-        validateGameState(to, from, next, 'end')
-      },
+      name: 'ended-view',
+      path: '/ended',
+      component: import('@/views/EndedView.vue'),
+      beforeEnter: validateGameState,
+    },
+    {
+      name: 'NotFound',
+      path: '/:pathMatch(.*)*',
+      component: SetupView,
     },
   ],
   scrollBehavior(to) {
