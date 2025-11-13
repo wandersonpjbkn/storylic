@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import TheRoomRules from '@/components/TheRoomRules.vue'
+
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 
@@ -20,9 +22,9 @@ const storeSettings = useSettingStore()
         <div
           :class="['w-3 h-3 rounded-full', storeSocket.isConnected ? 'bg-green-500' : 'bg-red-500']"
         />
-        <span class="text-white text-sm">{{
-          storeSocket.isConnected ? 'Conectado' : 'Desconectado'
-        }}</span>
+        <span class="text-white text-sm">
+          {{ storeSocket.isConnected ? 'Conectado' : 'Desconectado' }}
+        </span>
       </div>
     </div>
 
@@ -48,6 +50,9 @@ const storeSettings = useSettingStore()
       />
     </div>
 
+    <!-- rules -->
+    <the-room-rules class="my-8" />
+
     <!-- actions -->
     <button
       :disabled="!storeSocket.isConnected"
@@ -59,7 +64,7 @@ const storeSettings = useSettingStore()
       ]"
       type="submit"
     >
-      Entrar na Sala
+      Entrar na sala
     </button>
   </form>
 </template>

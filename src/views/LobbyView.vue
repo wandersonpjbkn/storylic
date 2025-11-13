@@ -1,9 +1,11 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
 
+import Home from '@/assets/icons/Home.vue'
+
 import ThePlayer from '@/components/ThePlayer.vue'
 import ThePlayersAvatars from '@/components/ThePlayersAvatars.vue'
-import TheRules from '@/components/TheRules.vue'
+import TheGameRules from '@/components/TheGameRules.vue'
 
 import { useSocketStore } from '@/stores/socket'
 
@@ -28,27 +30,30 @@ onMounted(() => {
       <div class="w-full md:w-1/3 bg-white/5 rounded-xl">
         <div class="p-6">
           <div class="flex justify-center gap-3">
+            <Home class="text-white" />
             <span class="text-white text-xl font-semibold">Sala [ {{ storeSocket.gameId }} ]</span>
           </div>
         </div>
       </div>
       <div class="w-full md:w-2/3 bg-white/5 rounded-xl">
         <div class="p-6">
-          <the-player :has-icon="false" />
+          <the-player />
         </div>
       </div>
     </div>
 
     <!-- players -->
-    <the-players-avatars />
+    <div class="mb-8">
+      <the-players-avatars />
+    </div>
 
     <!-- rules -->
-    <the-rules />
+    <the-game-rules class="mb-8" />
 
     <!-- start -->
     <button
       ref="submit"
-      class="w-full bg-linear-to-r from-pink-500 to-purple-500 text-white py-4 rounded-xl font-bold text-xl hover:from-pink-600 hover:to-purple-600 transition-all shadow-lg hover:shadow-xl"
+      class="w-full bg-linear-to-r from-pink-500 to-purple-500 text-white py-4 rounded-xl font-bold text-xl hover:from-pink-600 hover:to-purple-600 transition-all shadow-lg hover:shadow-xl mb-8"
       type="submit"
     >
       Iniciar Jogo
