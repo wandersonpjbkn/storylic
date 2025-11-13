@@ -10,8 +10,6 @@ import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
 
-type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
-
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 const storeCards = useCardsStore()
@@ -75,7 +73,7 @@ const finishTurn = () => {
       :class="[
         'flex-1 py-4 rounded-xl font-bold transition-all',
         storeCards.canConfirm
-          ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
+          ? 'bg-linear-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
           : 'bg-gray-500/50 text-gray-300 cursor-not-allowed',
       ]"
       @click="finishTurn"

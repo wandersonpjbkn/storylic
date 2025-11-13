@@ -5,10 +5,8 @@ import ThePlayersAvatars from '@/components/ThePlayersAvatars.vue'
 import TheRules from '@/components/TheRules.vue'
 
 import { useSocketStore } from '@/stores/socket'
-import { useSettingStore } from '@/stores/settings'
 
 const storeSocket = useSocketStore()
-const storeSettings = useSettingStore()
 
 const submit = ref<HTMLButtonElement | null>(null)
 
@@ -43,7 +41,7 @@ onMounted(() => {
     <!-- start -->
     <button
       ref="submit"
-      class="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-4 rounded-xl font-bold text-xl hover:from-pink-600 hover:to-purple-600 transition-all shadow-lg hover:shadow-xl"
+      class="w-full bg-linear-to-r from-pink-500 to-purple-500 text-white py-4 rounded-xl font-bold text-xl hover:from-pink-600 hover:to-purple-600 transition-all shadow-lg hover:shadow-xl"
       type="submit"
     >
       Iniciar Jogo

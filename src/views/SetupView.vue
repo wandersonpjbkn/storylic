@@ -52,7 +52,7 @@ const storeSettings = useSettingStore()
       :class="[
         'w-full py-4 rounded-xl font-bold text-xl transition-all shadow-lg',
         storeSocket.isConnected
-          ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600'
+          ? 'bg-linear-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600'
           : 'bg-gray-500/50 text-gray-300 cursor-not-allowed',
       ]"
       type="submit"

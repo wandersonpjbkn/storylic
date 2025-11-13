@@ -13,7 +13,7 @@ const storeSocket = useSocketStore()
         :key="item.id"
         :src="`https://avatar.iran.liara.run/username?username=${item.name}`"
         :alt="`Player ${i}`"
-        class="w-16 h-16 rounded-full border-2 border-white/30"
+        class="shrink-0 w-16 h-16 rounded-full border-2 border-white/30"
       />
     </div>
   </div>

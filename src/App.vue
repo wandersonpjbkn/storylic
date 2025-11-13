@@ -58,7 +58,7 @@ watch(gameState, (state) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 p-8">
+  <div class="min-h-screen bg-linear-to-br from-indigo-900 via-purple-900 to-pink-900 p-8">
     <div class="max-w-4xl mx-auto">
       <router-view />
     </div>
