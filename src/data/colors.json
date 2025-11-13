@@ -1,0 +1,9 @@
+{
+  "actions": "from-red-500 to-red-700",
+  "animals": "from-orange-500 to-orange-700",
+  "emotions": "from-pink-500 to-pink-700",
+  "nature": "from-yellow-500 to-yellow-700",
+  "objects": "from-blue-500 to-blue-700",
+  "personas": "from-purple-500 to-purple-700",
+  "places": "from-green-500 to-green-700"
+}
