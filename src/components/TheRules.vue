@@ -1,13 +1,31 @@
 <script lang="ts" setup>
+import { ref } from 'vue'
+
 import { useSettingStore } from '@/stores/settings'
 
 const storeSettings = useSettingStore()
+
+const isExpanded = ref(false)
+
+const toggleRules = () => {
+  isExpanded.value = !isExpanded.value
+}
 </script>
 
 <template>
   <div class="bg-white/5 rounded-xl p-6 mb-8">
-    <h3 class="text-white font-semibold mb-3">📖 Regras do Jogo:</h3>
-    <ul class="text-white/80 space-y-2 text-sm">
+    <h3
+      class="text-white font-semibold cursor-pointer select-none flex items-center justify-between"
+      @click="toggleRules"
+    >
+      <span>📖 Regras do Jogo</span>
+      <span
+        class="text-xl transition-transform ease-out duration-300"
+        :class="{ 'rotate-180': isExpanded }"
+        >▼</span
+      >
+    </h3>
+    <ul v-show="isExpanded" class="text-white/80 space-y-2 text-sm mt-3">
       <li>
         • Você tem até <strong>{{ storeSettings.baseTimerTurn }}s</strong> para escolher entre
         <strong>1 até 3</strong> cards

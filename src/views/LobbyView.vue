@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
 
+import ThePlayer from '@/components/ThePlayer.vue'
 import ThePlayersAvatars from '@/components/ThePlayersAvatars.vue'
 import TheRules from '@/components/TheRules.vue'
 
@@ -23,13 +24,19 @@ onMounted(() => {
     <h1 class="text-4xl font-bold text-white mb-2 text-center">Configurar partida</h1>
 
     <!-- room -->
-    <div class="mb-8">
-      <label class="block text-white mb-3 text-lg">Sala</label>
-      <input
-        :value="storeSocket.gameId"
-        class="w-full px-4 py-3 rounded-lg bg-white/80 text-gray-700 text-xl text-center border-2 border-white/30"
-        disabled
-      />
+    <div class="flex flex-col md:flex-row gap-4 mb-8">
+      <div class="w-full md:w-1/3 bg-white/5 rounded-xl">
+        <div class="p-6">
+          <div class="flex justify-center gap-3">
+            <span class="text-white text-xl font-semibold">Sala [ {{ storeSocket.gameId }} ]</span>
+          </div>
+        </div>
+      </div>
+      <div class="w-full md:w-2/3 bg-white/5 rounded-xl">
+        <div class="p-6">
+          <the-player :has-icon="false" />
+        </div>
+      </div>
     </div>
 
     <!-- players -->

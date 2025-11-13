@@ -22,7 +22,6 @@ export const useSettingStore = defineStore('settings', () => {
 
   /** player */
   const playerName = ref('')
-  const currentPlayer = ref('')
 
   /** turn */
   const turnCurrent = ref(1)
@@ -137,8 +136,6 @@ export const useSettingStore = defineStore('settings', () => {
     storeCard.initializeDeck()
 
     gameState.value = 'lobby'
-    playerName.value = ''
-    currentPlayer.value = ''
     turnCurrent.value = 1
     timerTurn.value = baseTimerTurn.value
     timerStory.value = baseTimerStory.value
@@ -159,7 +156,6 @@ export const useSettingStore = defineStore('settings', () => {
 
     /** player */
     playerName,
-    currentPlayer,
 
     /** turn */
     turnCurrent,
