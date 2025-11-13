@@ -12,9 +12,18 @@ import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
 
+import { useSeo } from '@/composables/useSeo'
+
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 const storeCards = useCardsStore()
+
+useSeo({
+  title: 'Jogando',
+  titleTemplate: '%s | Storylic | Clube Ecos Literários',
+  description: 'Selecione seus cards, corra antes que o tempo acabe',
+  robots: 'noindex, nofollow, noarchive, nosnippet, noodp',
+})
 
 const timerTurn = computed(() => {
   return storeSettings.timerTurn

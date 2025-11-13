@@ -9,9 +9,18 @@ import TheGameRules from '@/components/TheGameRules.vue'
 
 import { useSocketStore } from '@/stores/socket'
 
+import { useSeo } from '@/composables/useSeo'
+
 const storeSocket = useSocketStore()
 
 const submit = ref<HTMLButtonElement | null>(null)
+
+useSeo({
+  title: 'Lobby',
+  titleTemplate: '%s | Storylic | Clube Ecos Literários',
+  description: 'Vamos começar a jogar?',
+  robots: 'noindex, nofollow, noarchive, nosnippet, noodp',
+})
 
 onMounted(() => {
   if (submit.value) submit.value.focus()

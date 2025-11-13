@@ -3,7 +3,14 @@ import Reload from '@/assets/icons/Reload.vue'
 
 import { useSocketStore } from '@/stores/socket'
 
+import { useSeo } from '@/composables/useSeo'
+
 const storeSocket = useSocketStore()
+
+useSeo({
+  title: 'Jogo Finalizado',
+  description: 'Obrigado por jogar',
+})
 </script>
 
 <template>
