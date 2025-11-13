@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import Clock from '@/assets/icons/Clock.vue'
 import Shuffle from '@/assets/icons/Shuffle.vue'
-import Users from '@/assets/icons/Users.vue'
 
+import ThePlayer from '@/components/ThePlayer.vue'
 import TheDisplayedCards from '@/components/TheDisplayedCards.vue'
 import TheSelectedCards from '@/components/TheSelectedCards.vue'
 
@@ -25,10 +25,7 @@ const finishTurn = () => {
   <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20">
     <div class="flex justify-between items-center flex-wrap gap-4">
       <!-- user -->
-      <div class="flex items-center gap-3">
-        <Users />
-        <span class="text-white text-xl font-semibold">Jogador {{ storeSettings.playerName }}</span>
-      </div>
+      <the-player />
 
       <!-- timer -->
       <div class="flex items-center gap-3">
@@ -60,6 +57,13 @@ const finishTurn = () => {
 
   <!-- actions -->
   <div class="flex gap-4">
+    <button
+      class="flex-1 bg-red-500 hover:bg-red-900 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+      @click="storeSettings.stopTimerTurn"
+    >
+      Abortar
+    </button>
+
     <button
       class="flex-1 bg-white/20 hover:bg-white/30 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
       @click="storeCards.shuffleDisplayedCards"

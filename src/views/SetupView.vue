@@ -36,6 +36,8 @@ const storeSettings = useSettingStore()
         class="w-full px-4 py-3 rounded-lg bg-white/20 text-white text-xl text-center border-2 border-white/30 focus:border-white/60 focus:outline-none placeholder-white/40"
       />
     </div>
+
+    <!-- name -->
     <div class="mb-6">
       <label class="block text-white mb-3 text-lg">Seu nome:</label>
       <input
@@ -46,7 +48,7 @@ const storeSettings = useSettingStore()
       />
     </div>
 
-    <!-- join -->
+    <!-- actions -->
     <button
       :disabled="!storeSocket.isConnected"
       :class="[

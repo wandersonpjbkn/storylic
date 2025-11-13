@@ -1,6 +1,10 @@
 <script lang="ts" setup>
+import ThePlayer from '@/components/ThePlayer.vue'
+
+import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 
+const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 </script>
 
@@ -13,8 +17,12 @@ const storeSettings = useSettingStore()
     </div>
 
     <div class="bg-white/5 rounded-xl p-6 mb-8">
+      <the-player />
+    </div>
+
+    <div class="bg-white/5 rounded-xl p-6 mb-8">
       <p class="text-white text-2xl mb-3">
-        <span class="font-bold text-pink-400">Jogador {{ storeSettings.playerName }}</span>
+        <span class="font-bold text-pink-400">{{ storeSocket.currentPlayerName }}</span>
         está jogando agora
       </p>
       <p class="text-white/70">Turno {{ storeSettings.turnCurrent }}/3</p>
