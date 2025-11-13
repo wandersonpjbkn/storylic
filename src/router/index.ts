@@ -1,6 +1,6 @@
 import {
   createRouter,
-  createWebHistory,
+  createWebHashHistory,
   type RouteLocationNormalized,
   type NavigationGuardNext,
 } from 'vue-router'
@@ -22,7 +22,7 @@ const validateGameState = (
 }
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     {
       name: 'setup-view',
