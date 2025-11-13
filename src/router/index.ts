@@ -32,31 +32,31 @@ const router = createRouter({
     {
       name: 'lobby-view',
       path: '/lobby',
-      component: import('@/views/LobbyView.vue'),
+      component: () => import('@/views/LobbyView.vue'),
       beforeEnter: validateGameState,
     },
     {
       name: 'waiting-view',
       path: '/waiting',
-      component: import('@/views/WaitingView.vue'),
+      component: () => import('@/views/WaitingView.vue'),
       beforeEnter: validateGameState,
     },
     {
       name: 'playing-view',
       path: '/playing',
-      component: import('@/views/PlayingView.vue'),
+      component: () => import('@/views/PlayingView.vue'),
       beforeEnter: validateGameState,
     },
     {
       name: 'storytelling-view',
       path: '/storytelling',
-      component: import('@/views/StorytellingView.vue'),
+      component: () => import('@/views/StorytellingView.vue'),
       beforeEnter: validateGameState,
     },
     {
       name: 'ended-view',
       path: '/ended',
-      component: import('@/views/EndedView.vue'),
+      component: () => import('@/views/EndedView.vue'),
       beforeEnter: validateGameState,
     },
     {
