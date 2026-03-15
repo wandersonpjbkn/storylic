@@ -91,6 +91,7 @@ export default defineConfigWithVueTs(
   globalIgnores([
     '**/dist/**',
     '**/dist-ssr/**',
+    '**/dev-dist/**',
     '**/coverage/**',
     '**/src/assets/icons/*',
     '**/src/assets/svg/*',

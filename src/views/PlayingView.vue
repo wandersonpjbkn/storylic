@@ -1,87 +1,178 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 
-import Clock from '@/assets/icons/Clock.vue'
 import Shuffle from '@/assets/icons/Shuffle.vue'
-
-import ThePlayer from '@/components/ThePlayer.vue'
-import TheDisplayedCards from '@/components/TheDisplayedCards.vue'
-import TheSelectedCards from '@/components/TheSelectedCards.vue'
+import TheCard from '@/components/TheCard.vue'
+import TheTimer from '@/components/TheTimer.vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
-
 import { useSeo } from '@/composables/useSeo'
 
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 const storeCards = useCardsStore()
 
-useSeo({
-  title: 'Jogando',
-  description: 'Selecione seus cards, corra antes que o tempo acabe',
-})
+useSeo({ title: 'Jogando', description: 'Monte sua mão antes que o tempo acabe' })
+
+type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
 
 const timerTurn = computed(() => storeSettings.timerTurn)
+const slotsLeft = computed(() => 3 - storeCards.selectedCards.length)
 
 const finishTurn = () => {
   storeSettings.finishTurn()
   storeSocket.emitSelectedCards()
+  storeSocket.navigate('storytelling')
 }
 </script>
 
 <template>
-  <!-- head -->
-  <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20">
-    <div class="flex justify-between items-center flex-wrap gap-4">
-      <the-player />
-
-      <div class="flex items-center gap-3">
-        <Clock class="text-white" />
-        <span
-          :class="[
-            'text-3xl font-bold',
-            timerTurn <= storeSettings.timerThreshold ? 'text-red-400 animate-pulse' : 'text-white',
-          ]"
-        >
-          {{ timerTurn }}s
-        </span>
+  <div class="flex flex-col gap-4 pb-4">
+    <!-- Cabeçalho: jogador + turno -->
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="sl-label">Jogador</p>
+        <p class="text-white font-bold text-lg leading-snug">{{ storeSocket.myPlayerName }}</p>
       </div>
-
-      <div class="text-white text-xl font-semibold">
-        Turno [ {{ storeSettings.turnCurrent }}/{{ storeSettings.turnMax }} ]
+      <div class="text-right">
+        <p class="sl-label">Turno</p>
+        <p class="text-white font-bold text-lg leading-snug">
+          {{ storeSettings.turnCurrent
+          }}<span style="color: rgba(255, 255, 255, 0.4)">/{{ storeSettings.turnMax }}</span>
+        </p>
       </div>
     </div>
-  </div>
 
-  <!-- cards to select -->
-  <the-displayed-cards class="mb-6" />
+    <!-- Timer -->
+    <TheTimer
+      :value="timerTurn"
+      :base="storeSettings.baseTimerTurn"
+      label="Tempo para montar a mão"
+    />
 
-  <!-- selected cards -->
-  <the-selected-cards v-if="storeCards.canConfirm" class="mb-8" />
+    <!-- ── Baralho disponível ────────────────────────── -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <p class="sl-label">Baralho</p>
+        <p class="text-xs font-semibold" style="color: rgba(255, 255, 255, 0.35)">
+          toque para selecionar
+        </p>
+      </div>
 
-  <!-- actions -->
-  <div class="flex gap-4">
+      <div class="grid grid-cols-3 gap-3">
+        <TheCard
+          v-for="card in storeCards.displayedCards"
+          :key="card.name"
+          :name="card.name"
+          :category="card.category as Category"
+          :selected="storeCards.isCardSelected(card)"
+          :disabled="!storeCards.isCardSelected(card) && storeCards.selectedCards.length >= 3"
+          @click="storeCards.toggleCardSelection(card)"
+        />
+      </div>
+    </div>
+
+    <!-- Botão shuffle -->
     <button
-      class="flex-1 bg-white/20 hover:bg-white/30 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+      class="sl-btn-ghost w-full py-3 flex items-center justify-center gap-2"
       @click="storeCards.shuffleDisplayedCards"
     >
-      <Shuffle />
-      Shuffle Cartas
+      <Shuffle class="w-4 h-4 shrink-0" />
+      <span class="text-sm">Shuffle</span>
     </button>
 
-    <button
-      :disabled="!storeCards.canConfirm"
-      :class="[
-        'flex-1 py-4 rounded-xl font-bold transition-all',
+    <!-- ── Divisor minha mão ─────────────────────────── -->
+    <div class="relative h-px mt-2" style="background: rgba(255, 255, 255, 0.1)">
+      <span
+        class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-bold lowercase tracking-wider px-3 py-1 rounded-full"
+        style="
+          background: linear-gradient(135deg, #3b0764, #500724);
+          color: rgba(255, 255, 255, 0.45);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          white-space: nowrap;
+        "
+        >Minha mão</span
+      >
+    </div>
+
+    <!-- Slots visuais -->
+    <div class="flex items-center justify-between">
+      <div class="flex gap-2">
+        <div
+          v-for="i in 3"
+          :key="i"
+          class="h-1.5 rounded-full transition-all duration-300"
+          :style="{
+            width: i <= storeCards.selectedCards.length ? '36px' : '24px',
+            background:
+              i <= storeCards.selectedCards.length
+                ? 'linear-gradient(90deg,#a855f7,#ec4899)'
+                : 'rgba(255,255,255,0.12)',
+          }"
+        />
+      </div>
+      <span
+        class="text-xs font-bold"
+        :style="{
+          color: storeCards.selectedCards.length === 3 ? '#c4b5fd' : 'rgba(255,255,255,.35)',
+        }"
+      >
+        {{ storeCards.selectedCards.length }}/3
+        {{ slotsLeft > 0 ? `· ainda cabe ${slotsLeft}` : '· mão cheia' }}
+      </span>
+    </div>
+
+    <!-- Mão selecionada -->
+    <div class="flex gap-3 overflow-x-auto p-3 scrollbar-hide min-h-[100px]">
+      <TransitionGroup name="hand" tag="div" class="flex gap-5">
+        <TheCard
+          v-for="card in storeCards.selectedCards"
+          :key="card.name"
+          :name="card.name"
+          :category="card.category as Category"
+          :selected="true"
+          :compact="true"
+          @click="storeCards.toggleCardSelection(card)"
+        />
+      </TransitionGroup>
+
+      <!-- Slots vazios -->
+      <div
+        v-for="i in slotsLeft"
+        :key="`empty-${i}`"
+        class="flex-shrink-0 rounded-xl border-2 border-dashed flex items-center justify-center"
+        style="min-width: 80px; aspect-ratio: 2/3; border-color: rgba(255, 255, 255, 0.1)"
+      >
+        <span style="color: rgba(255, 255, 255, 0.15); font-size: 18px">+</span>
+      </div>
+    </div>
+
+    <!-- Botão confirmar -->
+    <button :disabled="!storeCards.canConfirm" class="sl-btn py-4 text-base" @click="finishTurn">
+      {{
         storeCards.canConfirm
-          ? 'bg-linear-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
-          : 'bg-gray-500/50 text-gray-300 cursor-not-allowed',
-      ]"
-      @click="finishTurn"
-    >
-      Confirmar Cartas ({{ storeCards.selectedCards.length }})
+          ? `Confirmar mão (${storeCards.selectedCards.length})`
+          : 'Selecione pelo menos 1 carta'
+      }}
     </button>
   </div>
 </template>
+
+<style scoped>
+.hand-enter-active {
+  transition: all 0.2s ease-out;
+}
+.hand-leave-active {
+  transition: all 0.15s ease-in;
+}
+.hand-enter-from {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.9);
+}
+.hand-leave-to {
+  opacity: 0;
+  transform: scale(0.85);
+}
+</style>

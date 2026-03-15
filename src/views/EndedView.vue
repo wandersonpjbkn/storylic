@@ -1,29 +1,31 @@
 <script lang="ts" setup>
 import Reload from '@/assets/icons/Reload.vue'
-
 import { useSocketStore } from '@/stores/socket'
-
 import { useSeo } from '@/composables/useSeo'
 
 const storeSocket = useSocketStore()
-
-useSeo({
-  title: 'Jogo Finalizado',
-  description: 'Obrigado por jogar',
-})
+useSeo({ title: 'Jogo Finalizado', description: 'Obrigado por jogar' })
 </script>
 
 <template>
-  <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-center border border-white/20">
-    <h2 class="text-4xl font-bold text-white mb-4">🎉 Jogo Finalizado!</h2>
-    <p class="text-white/80 text-xl mb-8">Obrigado por jogar!</p>
+  <div class="sl-surface p-8 text-center">
+    <div class="text-6xl mb-4">🎉</div>
+    <h2 class="text-3xl font-black text-white mb-2">Jogo Finalizado!</h2>
+    <p class="text-sm mb-8" style="color: rgba(255, 255, 255, 0.55)">
+      Que história incrível vocês criaram!
+    </p>
 
     <button
-      class="bg-linear-to-r from-pink-500 to-purple-500 text-white px-12 py-4 rounded-xl font-bold text-xl hover:from-pink-600 hover:to-purple-600 transition-all shadow-lg inline-flex items-center gap-2"
+      class="flex items-center w-full py-4 px-6 rounded-xl font-bold text-lg transition-all shadow-lg mx-auto bg-linear-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600 hover:shadow-xl cursor-pointer"
+      style="width: auto"
       @click="storeSocket.emitResetGame"
     >
-      <Reload />
-      Jogar Novamente
+      <Reload class="w-5 h-5 mr-2" />
+      Jogar novamente
     </button>
+
+    <p class="text-xs mt-6" style="color: rgba(255, 255, 255, 0.3)">
+      Você voltará para o lobby da mesma sala
+    </p>
   </div>
 </template>

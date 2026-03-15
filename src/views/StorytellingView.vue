@@ -1,84 +1,96 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
 
-import TheSelectedCards from '@/components/TheSelectedCards.vue'
+import TheTimer from '@/components/TheTimer.vue'
+import TheCard from '@/components/TheCard.vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
-
+import { useCardsStore } from '@/stores/cards'
 import { useSeo } from '@/composables/useSeo'
+
+type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
 
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
+const storeCards = useCardsStore()
 
-useSeo({
-  title: 'Contando histórias',
-  description: 'Deixe sua imaginação voar',
-})
+useSeo({ title: 'Contando histórias', description: 'Deixe sua imaginação voar' })
 
 const timerStory = computed(() => storeSettings.timerStory)
-
 const alreadyFinished = ref(false)
 
 const finishStoryAndNext = () => {
   if (alreadyFinished.value) return
   alreadyFinished.value = true
-
   storeSettings.stopTimerStory()
   storeSocket.emitFinishStoryAndNext()
 }
 
-watch(timerStory, (value) => {
-  if (value <= 0) finishStoryAndNext()
-})
+watch(timerStory, (v) => { if (v <= 0) finishStoryAndNext() })
 </script>
 
 <template>
-  <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-    <h2 class="text-3xl font-bold text-white mb-6 text-center">🎭 Hora de Contar a História!</h2>
+  <div class="flex flex-col gap-4 pb-4">
 
-    <!-- timer -->
-    <div class="bg-white/5 rounded-xl p-6 mb-6">
-      <p class="text-white/80 text-center mb-2">
-        Jogador [ {{ storeSocket.myPlayerName }} ] - Turno [ {{ storeSettings.turnCurrent }}/{{
-          storeSettings.turnMax
-        }}
-        ]
-      </p>
-      <p class="text-white text-center text-lg">
-        Você tem
-        <span
-          :class="[
-            'text-2xl font-bold',
-            timerStory <= storeSettings.storyTimerThreshold
-              ? 'text-red-400 animate-pulse'
-              : 'text-white',
-          ]"
-        >
-          {{ timerStory }}s
-        </span>
-        para contar seu trecho da história
+    <!-- Cabeçalho -->
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="sl-label">Narrando</p>
+        <p class="text-white font-bold text-lg leading-snug">{{ storeSocket.myPlayerName }}</p>
+      </div>
+      <div class="text-right">
+        <p class="sl-label">Turno</p>
+        <p class="text-white font-bold text-lg leading-snug">
+          {{ storeSettings.turnCurrent }}<span style="color:rgba(255,255,255,.4)">/{{ storeSettings.turnMax }}</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Timer -->
+    <TheTimer :value="timerStory" :base="storeSettings.baseTimerStory" label="Tempo para narrar" />
+
+    <!-- Instrução -->
+    <div class="sl-surface px-4 py-3 text-center">
+      <p class="text-sm leading-relaxed" style="color:rgba(255,255,255,.75)">
+        Conte seu trecho usando os cards abaixo.
+        <span class="block mt-0.5 text-xs" style="color:rgba(255,255,255,.40)">Seja criativo — tudo vale!</span>
       </p>
     </div>
 
-    <!-- selected cards -->
-    <the-selected-cards class="mb-8" />
+    <!-- Mão — grid centralizado, cards em tamanho normal, readonly -->
+    <div>
+      <p class="sl-label text-center mb-3">Sua mão</p>
 
-    <!-- actions -->
-    <div class="text-center">
-      <button
-        :disabled="alreadyFinished"
-        :class="[
-          'px-12 py-4 rounded-xl font-bold text-xl transition-all shadow-lg',
-          alreadyFinished
-            ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
-            : 'bg-linear-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600',
-        ]"
-        @click="finishStoryAndNext"
+      <!-- Grid dinâmico: 1 card → centralizado; 2 → dois colunas; 3 → três colunas -->
+      <div
+        class="grid gap-3 mx-auto"
+        :style="{
+          gridTemplateColumns: `repeat(${storeCards.selectedCards.length}, minmax(0, 1fr))`,
+          maxWidth: storeCards.selectedCards.length === 1 ? '140px'
+                  : storeCards.selectedCards.length === 2 ? '280px'
+                  : '100%',
+        }"
       >
-        Terminar vez
-      </button>
-      <p class="text-white/60 text-sm mt-4">Clique quando terminar de contar</p>
+        <TheCard
+          v-for="card in storeCards.selectedCards"
+          :key="card.name"
+          :name="card.name"
+          :category="card.category as Category"
+          :selected="true"
+          :readonly="true"
+        />
+      </div>
     </div>
+
+    <!-- Botão terminar -->
+    <button
+      :disabled="alreadyFinished"
+      class="sl-btn py-5 text-lg mt-2"
+      @click="finishStoryAndNext"
+    >
+      {{ alreadyFinished ? 'Aguardando próximo turno...' : 'Terminar minha vez' }}
+    </button>
+
   </div>
 </template>
