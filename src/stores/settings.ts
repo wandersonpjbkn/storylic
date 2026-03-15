@@ -8,26 +8,23 @@ import { useCardsStore } from '@/stores/cards'
 type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
 
 export const useSettingStore = defineStore('settings', () => {
-  // global
   const storeCard = useCardsStore()
 
-  // state
-
-  /** base */
+  // state — base
   const gameState = ref('setup')
   const numPlayers = ref(0)
   const baseTimerTurn = ref(25)
   const baseTimerStory = ref(45)
   const categoriesColors = ref(colors)
 
-  /** player */
+  // state — player
   const playerName = ref('')
 
-  /** turn */
+  // state — turn
   const turnCurrent = ref(1)
   const turnMax = ref(3)
 
-  /** timers */
+  // state — timers
   const timerTurn = ref(baseTimerTurn.value)
   const timerStory = ref(baseTimerStory.value)
   const timerTurnInterval = ref<number | null>(null)
@@ -36,33 +33,41 @@ export const useSettingStore = defineStore('settings', () => {
   const isStoryRunning = ref(false)
 
   // getters
-  const timerThreshold = computed(() => {
-    return Math.floor(baseTimerTurn.value * 0.5)
-  })
-  const storyTimerThreshold = computed(() => {
-    return Math.floor(baseTimerStory.value * 0.5)
-  })
+  const timerThreshold = computed(() => Math.floor(baseTimerTurn.value * 0.5))
+  const storyTimerThreshold = computed(() => Math.floor(baseTimerStory.value * 0.5))
 
-  // actions
-
-  /** style */
+  // actions — style
   const getCategoryColor = (category: Category) => {
     if (Object.prototype.hasOwnProperty.call(categoriesColors.value, category)) {
       return categoriesColors.value[category as Category]
     }
-
     return 'from-gray-500 to-gray-700'
   }
 
-  /** timers */
+  // actions — timers
   const stopTimerTurn = () => {
     isTurnRunning.value = false
-
     if (timerTurnInterval.value) {
       clearInterval(timerTurnInterval.value)
       timerTurnInterval.value = null
     }
   }
+
+  const stopTimerStory = () => {
+    isStoryRunning.value = false
+    if (timerStoryInterval.value) {
+      clearInterval(timerStoryInterval.value)
+      timerStoryInterval.value = null
+    }
+  }
+
+  const resetTimers = () => {
+    stopTimerTurn()
+    stopTimerStory()
+    timerTurn.value = baseTimerTurn.value
+    timerStory.value = baseTimerStory.value
+  }
+
   const startTimerTurn = () => {
     isTurnRunning.value = true
 
@@ -82,14 +87,7 @@ export const useSettingStore = defineStore('settings', () => {
       }
     }, 1000)
   }
-  const stopTimerStory = () => {
-    isStoryRunning.value = false
 
-    if (timerStoryInterval.value) {
-      clearInterval(timerStoryInterval.value)
-      timerStoryInterval.value = null
-    }
-  }
   const startTimerStory = () => {
     isStoryRunning.value = true
 
@@ -102,7 +100,7 @@ export const useSettingStore = defineStore('settings', () => {
     }, 1000)
   }
 
-  /** turns */
+  // actions — turns
   const finishTurn = () => {
     stopTimerTurn()
     startTimerStory()
@@ -114,82 +112,56 @@ export const useSettingStore = defineStore('settings', () => {
 
     gameState.value = 'storytelling'
   }
+
   const startPlayerTurn = () => {
     gameState.value = 'playing'
-
     storeCard.dealCards()
-
     timerTurn.value = baseTimerTurn.value
     timerStory.value = baseTimerStory.value
-
     startTimerTurn()
   }
 
-  /** start */
   const startGame = () => {
     gameState.value = 'playing'
-
     storeCard.dealCards()
-
     timerTurn.value = baseTimerTurn.value
     timerStory.value = baseTimerStory.value
-
     startTimerTurn()
   }
+
   const resetGame = () => {
     stopTimerTurn()
+    stopTimerStory()
     storeCard.initializeDeck()
 
     gameState.value = 'lobby'
     turnCurrent.value = 1
     timerTurn.value = baseTimerTurn.value
     timerStory.value = baseTimerStory.value
-
-    // store
     storeCard.selectedCards = []
     storeCard.displayedCards = []
   }
 
   return {
-    // state
-
-    /** base */
     gameState,
     numPlayers,
     baseTimerTurn,
     baseTimerStory,
-
-    /** player */
     playerName,
-
-    /** turn */
     turnCurrent,
     turnMax,
-
-    /** timers */
     timerTurn,
     timerStory,
     isTurnRunning,
     isStoryRunning,
-
-    // getters
     timerThreshold,
     storyTimerThreshold,
-
-    // actions
-
-    /** style */
     getCategoryColor,
-
-    /** timers */
     stopTimerTurn,
     stopTimerStory,
-
-    /** turns */
+    resetTimers,
     finishTurn,
     startPlayerTurn,
-
-    /** start */
     startGame,
     resetGame,
   }

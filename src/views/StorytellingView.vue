@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import TheSelectedCards from '@/components/TheSelectedCards.vue'
 
@@ -16,11 +16,14 @@ useSeo({
   description: 'Deixe sua imaginação voar',
 })
 
-const timerStory = computed(() => {
-  return storeSettings.timerStory
-})
+const timerStory = computed(() => storeSettings.timerStory)
+
+const alreadyFinished = ref(false)
 
 const finishStoryAndNext = () => {
+  if (alreadyFinished.value) return
+  alreadyFinished.value = true
+
   storeSettings.stopTimerStory()
   storeSocket.emitFinishStoryAndNext()
 }
@@ -64,7 +67,13 @@ watch(timerStory, (value) => {
     <!-- actions -->
     <div class="text-center">
       <button
-        class="bg-linear-to-r from-pink-500 to-purple-500 text-white px-12 py-4 rounded-xl font-bold text-xl hover:from-pink-600 hover:to-purple-600 transition-all shadow-lg"
+        :disabled="alreadyFinished"
+        :class="[
+          'px-12 py-4 rounded-xl font-bold text-xl transition-all shadow-lg',
+          alreadyFinished
+            ? 'bg-gray-500/50 text-gray-300 cursor-not-allowed'
+            : 'bg-linear-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600',
+        ]"
         @click="finishStoryAndNext"
       >
         Terminar vez

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 
 import Clock from '@/assets/icons/Clock.vue'
 import Shuffle from '@/assets/icons/Shuffle.vue'
@@ -23,28 +23,20 @@ useSeo({
   description: 'Selecione seus cards, corra antes que o tempo acabe',
 })
 
-const timerTurn = computed(() => {
-  return storeSettings.timerTurn
-})
+const timerTurn = computed(() => storeSettings.timerTurn)
 
 const finishTurn = () => {
   storeSettings.finishTurn()
   storeSocket.emitSelectedCards()
 }
-
-watch(timerTurn, (value) => {
-  if (value <= 0) finishTurn()
-})
 </script>
 
 <template>
   <!-- head -->
   <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6 border border-white/20">
     <div class="flex justify-between items-center flex-wrap gap-4">
-      <!-- user -->
       <the-player />
 
-      <!-- timer -->
       <div class="flex items-center gap-3">
         <Clock class="text-white" />
         <span
@@ -57,7 +49,6 @@ watch(timerTurn, (value) => {
         </span>
       </div>
 
-      <!-- turn -->
       <div class="text-white text-xl font-semibold">
         Turno [ {{ storeSettings.turnCurrent }}/{{ storeSettings.turnMax }} ]
       </div>

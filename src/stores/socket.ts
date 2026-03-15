@@ -25,12 +25,12 @@ export const useSocketStore = defineStore('socket', () => {
   const room = ref<Player[]>([])
   const currentPlayerNumber = ref('')
 
+  const mySocketId = ref('')
+
   // getters
-  const myPlayerNumber = computed(() => {
-    return socket.value?.id
-  })
+  const myPlayerNumber = computed(() => mySocketId.value)
   const myPlayerName = computed(() => {
-    return room.value.find(({ id }) => id === myPlayerNumber.value)?.name
+    return room.value.find(({ id }) => id === mySocketId.value)?.name
   })
   const currentPlayerName = computed(() => {
     return room.value.find(({ id }) => id === currentPlayerNumber.value)?.name
@@ -41,6 +41,8 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value = io(serverUrl.value)
 
     socket.value.on('connect', () => {
+      mySocketId.value = socket.value?.id ?? ''
+
       storeGlobal.openNotification({
         title: 'Conectado',
         message: 'Conectado ao servidor!',
@@ -59,27 +61,17 @@ export const useSocketStore = defineStore('socket', () => {
       })
 
       isConnected.value = false
-    })
-
-    socket.value.on('game-started', (game) => {
-      storeGlobal.openNotification({
-        title: 'Bom jogo',
-        message: 'Jogo iniciado!',
-        type: 'success',
-      })
-      console.log('jogo iniciado', game)
-
-      storeSettings.gameState = 'waiting'
+      mySocketId.value = ''
     })
 
     socket.value.on('game-state', ({ currentPlayer, players }) => {
+      const wasSmaller = storeSettings.numPlayers < players.length
+
       storeGlobal.openNotification({
         title: 'Sala atualizada',
-        message:
-          storeSettings.numPlayers > players.length ? 'Um jogador saiu' : 'Novo jogador na sala',
-        type: storeSettings.numPlayers > players.length ? 'warning' : 'info',
+        message: wasSmaller ? 'Novo jogador na sala' : 'Um jogador saiu',
+        type: wasSmaller ? 'info' : 'warning',
       })
-      console.log('sala atualizada', players)
 
       storeSettings.numPlayers = players.length
       currentPlayerNumber.value = currentPlayer
@@ -90,96 +82,99 @@ export const useSocketStore = defineStore('socket', () => {
       storeSettings.turnCurrent = data.currentTurn
       currentPlayerNumber.value = data.currentPlayer
 
-      if (data.currentPlayer === myPlayerNumber.value) storeSettings.startGame()
-      else {
+      if (data.currentPlayer === mySocketId.value) {
+        storeSettings.startGame()
+      } else {
+        storeSettings.resetTimers()
         storeSettings.gameState = 'waiting'
-        storeSettings.stopTimerTurn()
       }
     })
 
     socket.value.on('game-ended', () => {
-      console.log(`Jogo acabou`)
-
+      console.log('Jogo acabou')
       storeSettings.resetGame()
-
       storeSettings.gameState = 'ended'
     })
 
     socket.value.on('game-reset', () => {
       storeSettings.resetGame()
     })
+
+    socket.value.on('player-selected-cards', ({ cards, playerNumber }) => {
+      console.log(`Jogador ${playerNumber} escolheu as cartas:`, cards)
+    })
   }
+
   const emitJoinGame = () => {
     if (!gameId.value || !storeSettings.playerName) {
-      let message
-
-      if (!gameId.value) message = 'ID da sala'
-      if (!storeSettings.playerName) message = 'nome de jogador'
+      let message = ''
       if (!gameId.value && !storeSettings.playerName) message = 'ID da sala e nome de jogador'
+      else if (!gameId.value) message = 'ID da sala'
+      else message = 'nome de jogador'
 
       storeGlobal.openNotification({
         message: `Por favor, preencha ${message}`,
       })
-
       return
     }
 
     socket.value?.emit('join-game', {
       gameId: gameId.value,
       playerName: storeSettings.playerName,
-      playerNumber: myPlayerNumber.value,
     })
 
     storeSettings.gameState = 'lobby'
     storeSettings.playerName = ''
   }
+
   const emitStartGame = () => {
     socket.value?.emit('start-game', {
       gameId: gameId.value,
-      currentPlayer: myPlayerNumber.value,
+      currentPlayer: mySocketId.value,
       numPlayers: storeSettings.numPlayers,
       turns: storeSettings.turnMax,
     })
   }
+
   const emitSelectedCards = () => {
     socket.value?.emit('cards-selected', {
       gameId: gameId.value,
       cards: storeCards.selectedCards,
-      playerNumber: myPlayerNumber.value,
+      playerNumber: mySocketId.value,
     })
   }
+
   const emitFinishStoryAndNext = () => {
     socket.value?.emit('finish-storytelling', {
       gameId: gameId.value,
-      currentPlayer: myPlayerNumber.value,
+      currentPlayer: mySocketId.value,
     })
   }
+
   const emitResetGame = () => {
     socket.value?.emit('reset-game', {
       gameId: gameId.value,
     })
   }
+
   const emitLeaveGame = () => {
     socket.value?.emit('leave-game', {
       gameId: gameId.value,
-      playerNumber: myPlayerNumber.value,
+      playerNumber: mySocketId.value,
     })
   }
 
   return {
-    //state
     socket,
     gameId,
     isConnected,
     room,
     currentPlayerNumber,
 
-    // getters
     myPlayerNumber,
     myPlayerName,
     currentPlayerName,
 
-    // actions
     connectToServer,
     emitJoinGame,
     emitStartGame,
