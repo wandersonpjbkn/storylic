@@ -159,10 +159,7 @@ onMounted(() => {
     :description="`Iniciar com ${storeSocket.room.length} jogador(es)? Todos na sala serão puxados para o jogo agora.`"
     confirm-label="Sim, iniciar!"
     cancel-label="Ainda não"
-    @confirm="
-      showConfirm = false
-      storeSocket.emitStartGame()
-    "
+    @confirm="((showConfirm = false), storeSocket.emitStartGame())"
     @cancel="showConfirm = false"
   />
 </template>
