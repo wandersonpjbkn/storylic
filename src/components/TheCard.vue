@@ -1,5 +1,8 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue'
+
+import Checkmark from '@/assets/icons/Checkmark.vue'
+
 import { categoryImagePath } from '@/composables/useCardImage'
 
 type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
@@ -19,25 +22,39 @@ const props = withDefaults(
 const emit = defineEmits<{ click: [] }>()
 
 const meta: Record<string, { label: string; bg: string; catColor: string }> = {
-  actions:  { label: 'Ação',     bg: 'linear-gradient(160deg,#7f1d1d,#dc2626)', catColor: '#fca5a5' },
-  animals:  { label: 'Animal',   bg: 'linear-gradient(160deg,#713f12,#d97706)', catColor: '#fde68a' },
-  emotions: { label: 'Emoção',   bg: 'linear-gradient(160deg,#701a75,#c026d3)', catColor: '#f5d0fe' },
-  nature:   { label: 'Natureza', bg: 'linear-gradient(160deg,#134e4a,#0d9488)', catColor: '#99f6e4' },
-  objects:  { label: 'Objeto',   bg: 'linear-gradient(160deg,#164e63,#0891b2)', catColor: '#bae6fd' },
-  personas: { label: 'Persona',  bg: 'linear-gradient(160deg,#7c2d12,#ea580c)', catColor: '#fed7aa' },
-  places:   { label: 'Lugar',    bg: 'linear-gradient(160deg,#1e3a8a,#2563eb)', catColor: '#bfdbfe' },
+  actions: { label: 'Ação', bg: 'linear-gradient(160deg,#7f1d1d,#dc2626)', catColor: '#fca5a5' },
+  animals: { label: 'Animal', bg: 'linear-gradient(160deg,#713f12,#d97706)', catColor: '#fde68a' },
+  emotions: { label: 'Emoção', bg: 'linear-gradient(160deg,#701a75,#c026d3)', catColor: '#f5d0fe' },
+  nature: { label: 'Natureza', bg: 'linear-gradient(160deg,#134e4a,#0d9488)', catColor: '#99f6e4' },
+  objects: { label: 'Objeto', bg: 'linear-gradient(160deg,#164e63,#0891b2)', catColor: '#bae6fd' },
+  personas: {
+    label: 'Persona',
+    bg: 'linear-gradient(160deg,#7c2d12,#ea580c)',
+    catColor: '#fed7aa',
+  },
+  places: { label: 'Lugar', bg: 'linear-gradient(160deg,#1e3a8a,#2563eb)', catColor: '#bfdbfe' },
 }
 
-const m = computed(() => meta[props.category] ?? {
-  label: props.category,
-  bg: 'linear-gradient(160deg,#3730a3,#6366f1)',
-  catColor: '#c7d2fe',
-})
+const m = computed(
+  () =>
+    meta[props.category] ?? {
+      label: props.category,
+      bg: 'linear-gradient(160deg,#3730a3,#6366f1)',
+      catColor: '#c7d2fe',
+    },
+)
 
 const imgSrc = computed(() => categoryImagePath(props.category))
 const imgFailed = ref(false)
-watch(() => props.category, () => { imgFailed.value = false })
-const onImgError = () => { imgFailed.value = true }
+watch(
+  () => props.category,
+  () => {
+    imgFailed.value = false
+  },
+)
+const onImgError = () => {
+  imgFailed.value = true
+}
 </script>
 
 <template>
@@ -73,7 +90,16 @@ const onImgError = () => { imgFailed.value = true }
       <!-- Padrão losango -->
       <div
         class="absolute inset-0 pointer-events-none"
-        style="background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 1px,transparent 0,transparent 50%);background-size:12px 12px"
+        style="
+          background-image: repeating-linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.04) 0,
+            rgba(255, 255, 255, 0.04) 1px,
+            transparent 0,
+            transparent 50%
+          );
+          background-size: 12px 12px;
+        "
       />
 
       <!-- Imagem circular cropada -->
@@ -101,13 +127,20 @@ const onImgError = () => { imgFailed.value = true }
         v-if="imgFailed"
         class="relative z-10 font-bold uppercase tracking-widest"
         :style="{ color: m.catColor, fontSize: compact ? '8px' : '10px', opacity: 0.7 }"
-      >{{ m.label }}</span>
+        >{{ m.label }}</span
+      >
 
       <!-- Cantos decorativos -->
-      <span class="absolute top-1.5 left-2 text-white/20 pointer-events-none"
-        :style="{ fontSize: compact ? '7px' : '9px' }">✦</span>
-      <span class="absolute bottom-1.5 right-2 text-white/20 pointer-events-none"
-        :style="{ fontSize: compact ? '7px' : '9px' }">✦</span>
+      <span
+        class="absolute top-1.5 left-2 text-white/20 pointer-events-none"
+        :style="{ fontSize: compact ? '7px' : '9px' }"
+        >✦</span
+      >
+      <span
+        class="absolute bottom-1.5 right-2 text-white/20 pointer-events-none"
+        :style="{ fontSize: compact ? '7px' : '9px' }"
+        >✦</span
+      >
 
       <!-- Brilho linha no topo -->
       <div class="absolute inset-x-0 top-0 h-px bg-white/30 pointer-events-none" />
@@ -117,10 +150,7 @@ const onImgError = () => { imgFailed.value = true }
         v-if="selected"
         class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-md z-20"
       >
-        <svg class="w-3 h-3" viewBox="0 0 12 12" fill="none">
-          <path d="M2 6l3 3 5-5" stroke="#6d28d9" stroke-width="2.2"
-            stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <Checkmark />
       </div>
     </div>
 
@@ -141,13 +171,16 @@ const onImgError = () => { imgFailed.value = true }
           fontSize: compact ? '7px' : '9px',
           letterSpacing: '0.1em',
         }"
-      >{{ m.label }}</p>
+      >
+        {{ m.label }}
+      </p>
 
       <p
         class="font-black text-white leading-tight"
         :style="{ fontSize: compact ? '11px' : '15px' }"
-      >{{ name }}</p>
+      >
+        {{ name }}
+      </p>
     </div>
-
   </button>
 </template>

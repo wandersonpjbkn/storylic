@@ -1,11 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
-import colors from '@/data/colors.json'
-
 import { useCardsStore } from '@/stores/cards'
-
-type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
 
 export const useSettingStore = defineStore('settings', () => {
   const storeCard = useCardsStore()
@@ -14,7 +10,6 @@ export const useSettingStore = defineStore('settings', () => {
   const numPlayers = ref(0)
   const baseTimerTurn = ref(25)
   const baseTimerStory = ref(45)
-  const categoriesColors = ref(colors)
 
   const playerName = ref('')
   const turnCurrent = ref(1)
@@ -28,25 +23,19 @@ export const useSettingStore = defineStore('settings', () => {
   const isStoryRunning = ref(false)
 
   // Callback de navegação injetado pelo socket store após inicialização.
-  // Evita importar o navigator diretamente aqui (dependência circular).
-  // Chamado quando o timer interno do setInterval precisa navegar.
   let _onNavigate: ((state: string) => void) | null = null
-  const setNavigateCallback = (fn: (state: string) => void) => { _onNavigate = fn }
+  const setNavigateCallback = (fn: (state: string) => void) => {
+    _onNavigate = fn
+  }
 
   // Callback chamado quando o timer de turno zera automaticamente.
-  // Injetado pelo socket store para emitir emitSelectedCards sem dependência circular.
   let _onTurnAutoFinished: (() => void) | null = null
-  const setTurnAutoFinishedCallback = (fn: () => void) => { _onTurnAutoFinished = fn }
+  const setTurnAutoFinishedCallback = (fn: () => void) => {
+    _onTurnAutoFinished = fn
+  }
 
   const timerThreshold = computed(() => Math.floor(baseTimerTurn.value * 0.5))
   const storyTimerThreshold = computed(() => Math.floor(baseTimerStory.value * 0.5))
-
-  const getCategoryColor = (category: Category) => {
-    if (Object.prototype.hasOwnProperty.call(categoriesColors.value, category)) {
-      return categoriesColors.value[category as Category]
-    }
-    return 'from-gray-500 to-gray-700'
-  }
 
   const stopTimerTurn = () => {
     isTurnRunning.value = false
@@ -77,8 +66,6 @@ export const useSettingStore = defineStore('settings', () => {
       if (timerTurn.value > 0) {
         timerTurn.value -= 1
       } else {
-        // Timer esgotou: chama finishTurn() para iniciar o timerStory
-        // e notifica o socket store via callback (sem importá-lo diretamente)
         finishTurn()
         _onTurnAutoFinished?.()
         _onNavigate?.('storytelling')
@@ -97,15 +84,11 @@ export const useSettingStore = defineStore('settings', () => {
     }, 1000)
   }
 
-  // Bug 6 fix: restaura o timer de turno com o tempo RESTANTE calculado pelo backend.
-  // Chamado no rejoin-ack quando o jogador volta em /playing e é sua vez.
   const restoreTimer = (remainingSeconds: number) => {
     stopTimerTurn()
     timerTurn.value = remainingSeconds > 0 ? remainingSeconds : 0
   }
 
-  // Bug 6 fix: restaura o timer de story com o tempo restante.
-  // Chamado no rejoin-ack quando o jogador volta em /storytelling e era o narrador.
   const restoreStoryTimer = (remainingSeconds: number) => {
     stopTimerStory()
     timerStory.value = remainingSeconds > 0 ? remainingSeconds : 0
@@ -121,27 +104,13 @@ export const useSettingStore = defineStore('settings', () => {
     gameState.value = 'storytelling'
   }
 
-  const startPlayerTurn = () => {
-    gameState.value = 'playing'
-    storeCard.dealCards()
-    timerTurn.value = baseTimerTurn.value
-    timerStory.value = baseTimerStory.value
-    startTimerTurn()
-  }
-
   const startGame = () => {
     gameState.value = 'playing'
     storeCard.dealCards()
-    // Bug 3 fix: NÃO reseta timerTurn aqui — se restoreTimer foi chamado antes,
-    // o valor correto já está definido. startGame apenas inicia o intervalo.
-    // timerStory sempre começa do zero (narração não havia começado ainda)
     timerStory.value = baseTimerStory.value
     startTimerTurn()
   }
 
-  // softResetGame: reseta estado do jogo sem limpar sessão nem navegar para setup.
-  // Usado quando o host inicia nova partida na mesma sala (game-reset com reason='new-game').
-  // Jogadores mantêm token e gameId — já estão no lobby.
   const softResetGame = () => {
     stopTimerTurn()
     stopTimerStory()
@@ -158,8 +127,6 @@ export const useSettingStore = defineStore('settings', () => {
     stopTimerTurn()
     stopTimerStory()
     storeCard.initializeDeck()
-    // Bug 2 fix: 'setup' em vez de 'lobby' — o jogador saiu da sala
-    // A navegação para rooms/setup é feita pelo socket store via goTo
     gameState.value = 'setup'
     turnCurrent.value = 1
     timerTurn.value = baseTimerTurn.value
@@ -182,7 +149,6 @@ export const useSettingStore = defineStore('settings', () => {
     isStoryRunning,
     timerThreshold,
     storyTimerThreshold,
-    getCategoryColor,
     stopTimerTurn,
     stopTimerStory,
     setNavigateCallback,
@@ -191,7 +157,6 @@ export const useSettingStore = defineStore('settings', () => {
     restoreTimer,
     restoreStoryTimer,
     finishTurn,
-    startPlayerTurn,
     startGame,
     softResetGame,
     resetGame,

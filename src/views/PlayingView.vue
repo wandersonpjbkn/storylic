@@ -52,7 +52,7 @@ const finishTurn = () => {
       label="Tempo para montar a mão"
     />
 
-    <!-- ── Baralho disponível ────────────────────────── -->
+    <!-- Baralho disponível -->
     <div>
       <div class="flex items-center justify-between mb-3">
         <p class="sl-label">Baralho</p>
@@ -83,7 +83,7 @@ const finishTurn = () => {
       <span class="text-sm">Shuffle</span>
     </button>
 
-    <!-- ── Divisor minha mão ─────────────────────────── -->
+    <!-- Divisor minha mão -->
     <div class="relative h-px mt-2" style="background: rgba(255, 255, 255, 0.1)">
       <span
         class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-bold lowercase tracking-wider px-3 py-1 rounded-full"
@@ -124,9 +124,9 @@ const finishTurn = () => {
       </span>
     </div>
 
-    <!-- Mão selecionada -->
-    <div class="flex gap-3 overflow-x-auto p-3 scrollbar-hide min-h-[100px]">
-      <TransitionGroup name="hand" tag="div" class="flex gap-5">
+    <!-- Mão selecionada — TransitionGroup É o único flex container, sem div extra -->
+    <div class="overflow-x-auto scrollbar-hide min-h-[100px]">
+      <TransitionGroup name="hand" tag="div" class="flex gap-3 p-3">
         <TheCard
           v-for="card in storeCards.selectedCards"
           :key="card.name"
@@ -136,17 +136,17 @@ const finishTurn = () => {
           :compact="true"
           @click="storeCards.toggleCardSelection(card)"
         />
-      </TransitionGroup>
 
-      <!-- Slots vazios -->
-      <div
-        v-for="i in slotsLeft"
-        :key="`empty-${i}`"
-        class="flex-shrink-0 rounded-xl border-2 border-dashed flex items-center justify-center"
-        style="min-width: 80px; aspect-ratio: 2/3; border-color: rgba(255, 255, 255, 0.1)"
-      >
-        <span style="color: rgba(255, 255, 255, 0.15); font-size: 18px">+</span>
-      </div>
+        <!-- Slots vazios — dentro do mesmo TransitionGroup tag div -->
+        <div
+          v-for="i in slotsLeft"
+          :key="`empty-${i}`"
+          class="flex-shrink-0 rounded-xl border-2 border-dashed flex items-center justify-center"
+          style="min-width: 80px; aspect-ratio: 2/3; border-color: rgba(255, 255, 255, 0.1)"
+        >
+          <span style="color: rgba(255, 255, 255, 0.15); font-size: 18px">+</span>
+        </div>
+      </TransitionGroup>
     </div>
 
     <!-- Botão confirmar -->

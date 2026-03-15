@@ -5,6 +5,7 @@ import Alert from '@/assets/icons/Alert.vue'
 import Error from '@/assets/icons/Error.vue'
 import Info from '@/assets/icons/Info.vue'
 import Success from '@/assets/icons/Success.vue'
+import Times from '@/assets/icons/Times.vue'
 
 import { useGlobalStore } from '@/stores/global'
 
@@ -75,14 +76,7 @@ watch(notification, ({ message }) => {
             class="shrink-0 text-white/60 hover:text-white transition-colors"
             @click="storeGlobal.closeNotification"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              ></path>
-            </svg>
+            <Times />
           </button>
         </div>
 

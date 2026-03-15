@@ -14,8 +14,8 @@ const storeCards = useCardsStore()
     <p class="sl-label mb-2">Sua mão</p>
     <div class="flex gap-3 p-3 overflow-x-auto pb-1 scrollbar-hide">
       <TheCard
-        v-for="(card, i) in storeCards.selectedCards"
-        :key="i"
+        v-for="card in storeCards.selectedCards"
+        :key="card.name"
         :name="card.name"
         :category="card.category as Category"
         :selected="true"

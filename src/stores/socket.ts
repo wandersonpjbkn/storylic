@@ -22,12 +22,14 @@ interface StoredSession {
 
 const saveSession = (token: string, gameId: string, playerName?: string) => {
   const existing = loadSession()
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify({
-    token,
-    gameId,
-    // Bug 8 fix: preserva o nome existente se não for passado um novo
-    playerName: playerName ?? existing?.playerName ?? '',
-  }))
+  sessionStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({
+      token,
+      gameId,
+      playerName: playerName ?? existing?.playerName ?? '',
+    }),
+  )
 }
 
 const loadSession = (): StoredSession | null => {
@@ -55,14 +57,8 @@ export const useSocketStore = defineStore('socket', () => {
   const mySocketId = ref('')
   const isReconnecting = ref(false)
 
-  // Bug A fix: suprime o toast do primeiro game-state após join-game.
-  // Sem isso, numPlayers ainda tem o valor da sala anterior, causando
-  // "um jogador saiu" ao entrar numa sala menor.
   const justJoined = ref(false)
 
-
-  // Seta gameState e navega de forma síncrona — sem depender de watch.
-  // navigateTo chama router.push diretamente após o estado já ter sido salvo.
   const goTo = (state: string) => {
     storeSettings.gameState = state
     navigateTo(state)
@@ -70,16 +66,12 @@ export const useSocketStore = defineStore('socket', () => {
 
   const myPlayerNumber = computed(() => mySocketId.value)
   const myPlayerName = computed(() => room.value.find(({ id }) => id === mySocketId.value)?.name)
-  const currentPlayerName = computed(() => room.value.find(({ id }) => id === currentPlayerNumber.value)?.name)
+  const currentPlayerName = computed(
+    () => room.value.find(({ id }) => id === currentPlayerNumber.value)?.name,
+  )
 
   const connectToServer = () => {
-    // Injeta o callback de navegação no settings store para que o timer
-    // interno (setInterval) possa navegar quando o tempo esgota
     storeSettings.setNavigateCallback(goTo)
-
-    // Injeta o callback de conclusão automática de turno — chamado quando
-    // o timer zera sem o jogador clicar em "Confirmar". Emite emitSelectedCards
-    // sem que o settings.ts precise importar o socket store.
     storeSettings.setTurnAutoFinishedCallback(() => {
       emitSelectedCards()
     })
@@ -114,83 +106,100 @@ export const useSocketStore = defineStore('socket', () => {
       mySocketId.value = ''
     })
 
-    socket.value.on('join-ack', ({ token, gameId: gId }: { token: string; gameId: string }) => {
-      // Bug 8 fix: salva o nome do jogador junto com o token
-      // O nome é buscado do room[] que acabou de ser atualizado pelo game-state
-      const myName = room.value.find((p) => p.id === mySocketId.value)?.name ?? ''
-      saveSession(token, gId, myName)
-    })
+    socket.value.on(
+      'join-ack',
+      ({
+        token,
+        gameId: gId,
+        isCreator,
+      }: {
+        token: string
+        gameId: string
+        isCreator: boolean
+      }) => {
+        const myName = room.value.find((p) => p.id === mySocketId.value)?.name ?? ''
+        saveSession(token, gId, myName)
 
-    socket.value.on('rejoin-ack', (data: {
-      gameState: string
-      currentPlayer: string
-      currentTurn: number
-      turns: number
-      players: Player[]
-      isMyTurn: boolean
-      remainingTurnMs: number
-      newToken: string
-    }) => {
-      isReconnecting.value = false
+        if (isCreator) {
+          goTo('config')
+        }
+      },
+    )
 
-      const session = loadSession()
-      if (session) {
-        // Bug 8 fix: preserva o playerName ao rotacionar o token
-        saveSession(data.newToken, session.gameId, session.playerName)
-        gameId.value = session.gameId
-      }
+    socket.value.on(
+      'rejoin-ack',
+      (data: {
+        gameState: string
+        currentPlayer: string
+        currentTurn: number
+        turns: number
+        players: Player[]
+        isMyTurn: boolean
+        remainingTurnMs: number
+        newToken: string
+        timerTurn: number
+        timerStory: number
+      }) => {
+        isReconnecting.value = false
 
-      room.value = data.players
-      currentPlayerNumber.value = data.currentPlayer
-      storeSettings.turnCurrent = data.currentTurn
-      storeSettings.turnMax = data.turns
+        const session = loadSession()
+        if (session) {
+          saveSession(data.newToken, session.gameId, session.playerName)
+          gameId.value = session.gameId
+        }
 
-      storeGlobal.openNotification({
-        title: 'Reconectado!',
-        message: 'Você voltou para a partida.',
-        type: 'success',
-        duration: 3000,
-      })
+        room.value = data.players
+        currentPlayerNumber.value = data.currentPlayer
+        storeSettings.turnCurrent = data.currentTurn
+        storeSettings.turnMax = data.turns
 
-      switch (data.gameState) {
-        case 'lobby':
-          goTo('lobby')
-          break
-        case 'playing':
-          if (data.isMyTurn) {
-            // Bug 6 fix: restoreTimer ANTES de startGame — startGame não reseta mais
-            // o timer (correção no settings.ts). navigateTo chama apenas o router,
-            // sem setar gameState novamente (startGame já fez isso).
-            storeSettings.restoreTimer(Math.round(data.remainingTurnMs / 1000))
-            storeSettings.startGame()
-            navigateTo('playing')
-          } else {
+        if (data.timerTurn) storeSettings.baseTimerTurn = data.timerTurn
+        if (data.timerStory) storeSettings.baseTimerStory = data.timerStory
+
+        storeGlobal.openNotification({
+          title: 'Reconectado!',
+          message: 'Você voltou para a partida.',
+          type: 'success',
+          duration: 3000,
+        })
+
+        switch (data.gameState) {
+          case 'lobby':
+            goTo('lobby')
+            break
+          case 'playing':
+            if (data.isMyTurn) {
+              storeSettings.restoreTimer(Math.round(data.remainingTurnMs / 1000))
+              storeSettings.startGame()
+              navigateTo('playing')
+            } else {
+              storeSettings.resetTimers()
+              goTo('waiting')
+            }
+            break
+          case 'storytelling':
+            if (data.isMyTurn) {
+              storeSettings.restoreStoryTimer(Math.round(data.remainingTurnMs / 1000))
+              goTo('storytelling')
+            } else {
+              goTo('waiting')
+            }
+            break
+          case 'waiting':
             storeSettings.resetTimers()
             goTo('waiting')
-          }
-          break
-        case 'storytelling':
-          if (data.isMyTurn) {
-            storeSettings.restoreStoryTimer(Math.round(data.remainingTurnMs / 1000))
-            goTo('storytelling')
-          } else {
-            goTo('waiting')
-          }
-          break
-        case 'waiting':
-          storeSettings.resetTimers()
-          goTo('waiting')
-          break
-        case 'ended':
-          clearSession()
-          goTo('ended')
-          break
-        default:
-          clearSession()
-          goTo('setup')
-          break
-      }
-    })
+            break
+          case 'ended':
+            clearSession()
+            goTo('ended')
+            break
+          default:
+            clearSession()
+            goTo('setup')
+            break
+        }
+      },
+    )
 
     socket.value.on('rejoin-error', ({ reason }: { reason: string }) => {
       isReconnecting.value = false
@@ -205,9 +214,6 @@ export const useSocketStore = defineStore('socket', () => {
     })
 
     socket.value.on('game-state', ({ currentPlayer, players }) => {
-      // Bug A fix: no primeiro game-state após join-game, apenas atualiza o
-      // estado silenciosamente — não exibe toast, pois numPlayers ainda
-      // reflete a sala anterior e a comparação seria inválida.
       if (justJoined.value) {
         justJoined.value = false
         storeSettings.numPlayers = players.length
@@ -244,54 +250,96 @@ export const useSocketStore = defineStore('socket', () => {
     })
 
     socket.value.on('game-ended', () => {
-      // Não limpa sessão — o jogador permanece na sala para jogar novamente
       storeSettings.softResetGame()
       goTo('ended')
     })
 
-    socket.value.on('game-reset', ({ reason }: { reason?: string } = {}) => {
-      if (reason === 'new-game') {
-        // Nova partida na mesma sala: mantém sessão, volta para o lobby
-        storeSettings.softResetGame()
-        goTo('lobby')
-      } else {
-        // Sala encerrada (todos saíram): limpa tudo e vai para rooms
-        clearSession()
-        storeSettings.resetGame()
-        goTo('rooms')
-      }
-    })
+    socket.value.on(
+      'game-reset',
+      ({
+        reason,
+        creatorId,
+        timerTurn,
+        timerStory,
+        turns,
+      }: {
+        reason?: string
+        creatorId?: string
+        timerTurn?: number
+        timerStory?: number
+        turns?: number
+      } = {}) => {
+        if (reason === 'new-game') {
+          if (timerTurn) storeSettings.baseTimerTurn = timerTurn
+          if (timerStory) storeSettings.baseTimerStory = timerStory
+          if (turns) storeSettings.turnMax = turns
+          storeSettings.softResetGame()
+
+          if (creatorId && creatorId === mySocketId.value) {
+            goTo('config')
+          } else {
+            goTo('lobby')
+          }
+        } else {
+          clearSession()
+          storeSettings.resetGame()
+          goTo('rooms')
+        }
+      },
+    )
+
+    socket.value.on(
+      'room-config',
+      ({
+        timerTurn,
+        timerStory,
+        turns,
+      }: {
+        timerTurn: number
+        timerStory: number
+        turns: number
+      }) => {
+        storeSettings.baseTimerTurn = timerTurn
+        storeSettings.baseTimerStory = timerStory
+        storeSettings.turnMax = turns
+      },
+    )
 
     socket.value.on('player-selected-cards', ({ cards, playerNumber }) => {
       console.log('Jogador', playerNumber, 'escolheu:', cards)
     })
 
-    socket.value.on('player-disconnected', ({ playerName, reservedFor }: {
-      playerId: string
-      playerName: string
-      reservedFor: number
-    }) => {
-      storeGlobal.openNotification({
-        title: `${playerName} desconectou`,
-        message: `A vaga está reservada por ${reservedFor / 1000}s`,
-        type: 'warning',
-        duration: reservedFor,
-      })
-    })
+    socket.value.on(
+      'player-disconnected',
+      ({
+        playerName,
+        reservedFor,
+      }: {
+        playerId: string
+        playerName: string
+        reservedFor: number
+      }) => {
+        storeGlobal.openNotification({
+          title: `${playerName} desconectou`,
+          message: `A vaga está reservada por ${reservedFor / 1000}s`,
+          type: 'warning',
+          duration: reservedFor,
+        })
+      },
+    )
 
-    socket.value.on('player-reconnected', ({ playerName, players }: {
-      playerId: string
-      playerName: string
-      players: Player[]
-    }) => {
-      room.value = players
-      storeGlobal.openNotification({
-        title: `${playerName} voltou!`,
-        message: 'O jogador reconectou à partida.',
-        type: 'success',
-        duration: 3000,
-      })
-    })
+    socket.value.on(
+      'player-reconnected',
+      ({ playerName, players }: { playerId: string; playerName: string; players: Player[] }) => {
+        room.value = players
+        storeGlobal.openNotification({
+          title: `${playerName} voltou!`,
+          message: 'O jogador reconectou à partida.',
+          type: 'success',
+          duration: 3000,
+        })
+      },
+    )
   }
 
   const emitJoinGame = () => {
@@ -304,8 +352,6 @@ export const useSocketStore = defineStore('socket', () => {
       return
     }
 
-    // Bug A fix: marca que o próximo game-state é o primeiro desta sala —
-    // deve ser absorvido silenciosamente sem comparar com numPlayers anterior.
     justJoined.value = true
     storeSettings.numPlayers = 0
 
@@ -343,10 +389,24 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value?.emit('reset-game', { gameId: gameId.value })
   }
 
+  const emitConfigGame = ({
+    timerTurn,
+    timerStory,
+    turns,
+  }: {
+    timerTurn: number
+    timerStory: number
+    turns: number
+  }) => {
+    socket.value?.emit('config-game', {
+      gameId: gameId.value,
+      timerTurn,
+      timerStory,
+      turns,
+    })
+  }
+
   const emitLeaveGame = () => {
-    // Bug B fix: emite leave-game com o gameId ANTES de zerá-lo,
-    // garantindo que o backend receba o ID correto da sala que está saindo.
-    // Antes, gameId era zerado antes do emit, chegando vazio no servidor.
     const leavingGameId = gameId.value
     clearSession()
     goTo('setup')
@@ -356,10 +416,6 @@ export const useSocketStore = defineStore('socket', () => {
     gameId.value = ''
   }
 
-
-  // Bug 2+3 fix: dispara rejoin-game diretamente com o token da sessão.
-  // Usado pelo SetupView no modo retorno — evita criar entrada duplicada
-  // via join-game e garante navegação correta via rejoin-ack.
   const triggerRejoin = (targetGameId: string, token: string) => {
     gameId.value = targetGameId
     isReconnecting.value = true
@@ -380,6 +436,7 @@ export const useSocketStore = defineStore('socket', () => {
     navigate: goTo,
     triggerRejoin,
     emitJoinGame,
+    emitConfigGame,
     emitStartGame,
     emitSelectedCards,
     emitFinishStoryAndNext,

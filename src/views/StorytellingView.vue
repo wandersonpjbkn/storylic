@@ -27,12 +27,13 @@ const finishStoryAndNext = () => {
   storeSocket.emitFinishStoryAndNext()
 }
 
-watch(timerStory, (v) => { if (v <= 0) finishStoryAndNext() })
+watch(timerStory, (v) => {
+  if (v <= 0) finishStoryAndNext()
+})
 </script>
 
 <template>
   <div class="flex flex-col gap-4 pb-4">
-
     <!-- Cabeçalho -->
     <div class="flex items-center justify-between">
       <div>
@@ -42,7 +43,8 @@ watch(timerStory, (v) => { if (v <= 0) finishStoryAndNext() })
       <div class="text-right">
         <p class="sl-label">Turno</p>
         <p class="text-white font-bold text-lg leading-snug">
-          {{ storeSettings.turnCurrent }}<span style="color:rgba(255,255,255,.4)">/{{ storeSettings.turnMax }}</span>
+          {{ storeSettings.turnCurrent
+          }}<span style="color: rgba(255, 255, 255, 0.4)">/{{ storeSettings.turnMax }}</span>
         </p>
       </div>
     </div>
@@ -52,9 +54,11 @@ watch(timerStory, (v) => { if (v <= 0) finishStoryAndNext() })
 
     <!-- Instrução -->
     <div class="sl-surface px-4 py-3 text-center">
-      <p class="text-sm leading-relaxed" style="color:rgba(255,255,255,.75)">
+      <p class="text-sm leading-relaxed" style="color: rgba(255, 255, 255, 0.75)">
         Conte seu trecho usando os cards abaixo.
-        <span class="block mt-0.5 text-xs" style="color:rgba(255,255,255,.40)">Seja criativo — tudo vale!</span>
+        <span class="block mt-0.5 text-xs" style="color: rgba(255, 255, 255, 0.4)"
+          >Seja criativo — tudo vale!</span
+        >
       </p>
     </div>
 
@@ -67,9 +71,12 @@ watch(timerStory, (v) => { if (v <= 0) finishStoryAndNext() })
         class="grid gap-3 mx-auto"
         :style="{
           gridTemplateColumns: `repeat(${storeCards.selectedCards.length}, minmax(0, 1fr))`,
-          maxWidth: storeCards.selectedCards.length === 1 ? '140px'
-                  : storeCards.selectedCards.length === 2 ? '280px'
-                  : '100%',
+          maxWidth:
+            storeCards.selectedCards.length === 1
+              ? '140px'
+              : storeCards.selectedCards.length === 2
+                ? '280px'
+                : '100%',
         }"
       >
         <TheCard
@@ -91,6 +98,5 @@ watch(timerStory, (v) => { if (v <= 0) finishStoryAndNext() })
     >
       {{ alreadyFinished ? 'Aguardando próximo turno...' : 'Terminar minha vez' }}
     </button>
-
   </div>
 </template>

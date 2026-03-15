@@ -30,7 +30,10 @@ onUnmounted(() => {
 <template>
   <div
     class="sl-root min-h-screen"
-    style="padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)"
+    style="
+      padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+        env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    "
   >
     <div class="max-w-lg mx-auto px-4 pt-6 pb-10">
       <router-view />
@@ -49,11 +52,15 @@ onUnmounted(() => {
       <div
         v-if="storeSocket.isReconnecting"
         class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4"
-        style="background:rgba(30,10,60,0.88);backdrop-filter:blur(10px)"
+        style="background: rgba(30, 10, 60, 0.88); backdrop-filter: blur(10px)"
       >
-        <div class="w-12 h-12 border-4 border-white/20 border-t-pink-400 rounded-full animate-spin" />
+        <div
+          class="w-12 h-12 border-4 border-white/20 border-t-pink-400 rounded-full animate-spin"
+        />
         <p class="text-white text-lg font-bold">Reconectando...</p>
-        <p style="color:rgba(255,255,255,.5)" class="text-sm">Verificando sua sessão anterior</p>
+        <p style="color: rgba(255, 255, 255, 0.5)" class="text-sm">
+          Verificando sua sessão anterior
+        </p>
       </div>
     </transition>
   </Teleport>
@@ -67,39 +74,40 @@ onUnmounted(() => {
 :root {
   /* Fundo — gradiente indigo→purple→pink igual ao original */
   --sl-bg-from: #312e81;
-  --sl-bg-via:  #581c87;
-  --sl-bg-to:   #831843;
+  --sl-bg-via: #581c87;
+  --sl-bg-to: #831843;
 
   /* Superfícies — vidro sobre o gradiente */
-  --sl-glass:       rgba(255,255,255,0.10);
-  --sl-glass-hover: rgba(255,255,255,0.15);
-  --sl-glass-2:     rgba(255,255,255,0.06);
-  --sl-border:      rgba(255,255,255,0.18);
-  --sl-border-soft: rgba(255,255,255,0.10);
+  --sl-glass: rgba(255, 255, 255, 0.1);
+  --sl-glass-hover: rgba(255, 255, 255, 0.15);
+  --sl-glass-2: rgba(255, 255, 255, 0.06);
+  --sl-border: rgba(255, 255, 255, 0.18);
+  --sl-border-soft: rgba(255, 255, 255, 0.1);
 
   /* Texto — sempre legível sobre o gradiente escuro */
-  --sl-text:       #ffffff;
-  --sl-text-2:     rgba(255,255,255,0.80);
-  --sl-text-3:     rgba(255,255,255,0.50);
+  --sl-text: #ffffff;
+  --sl-text-2: rgba(255, 255, 255, 0.8);
+  --sl-text-3: rgba(255, 255, 255, 0.5);
 
   /* Paleta de acento */
-  --sl-pink:   #ec4899;
+  --sl-pink: #ec4899;
   --sl-purple: #a855f7;
   --sl-indigo: #6366f1;
-  --sl-amber:  #f59e0b;
+  --sl-amber: #f59e0b;
   --sl-orange: #f97316;
-  --sl-green:  #22c55e;
+  --sl-green: #22c55e;
 
   /* Botão primário — pink→purple */
-  --sl-btn-grad: linear-gradient(135deg,#ec4899,#a855f7);
-  --sl-btn-shadow: 0 4px 16px rgba(168,85,247,0.40);
+  --sl-btn-grad: linear-gradient(135deg, #ec4899, #a855f7);
+  --sl-btn-shadow: 0 4px 16px rgba(168, 85, 247, 0.4);
 
   /* Botão de confirmação — amber→pink */
-  --sl-btn-confirm-grad: linear-gradient(135deg,#f59e0b,#ec4899);
-  --sl-btn-confirm-shadow: 0 4px 14px rgba(236,72,153,0.35);
+  --sl-btn-confirm-grad: linear-gradient(135deg, #f59e0b, #ec4899);
+  --sl-btn-confirm-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
 }
 
-html, body {
+html,
+body {
   margin: 0 !important;
   padding: 0 !important;
   overflow: auto;
@@ -108,11 +116,20 @@ html, body {
   color: var(--sl-text);
 }
 
-button { cursor: pointer; }
-#app   { position: relative; }
+button {
+  cursor: pointer;
+}
+#app {
+  position: relative;
+}
 
 .sl-root {
-  background: linear-gradient(135deg, var(--sl-bg-from) 0%, var(--sl-bg-via) 50%, var(--sl-bg-to) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--sl-bg-from) 0%,
+    var(--sl-bg-via) 50%,
+    var(--sl-bg-to) 100%
+  );
   background-attachment: fixed;
 }
 
@@ -145,13 +162,19 @@ button { cursor: pointer; }
   color: #fff;
   background: var(--sl-btn-grad);
   box-shadow: var(--sl-btn-shadow);
-  transition: opacity 0.15s, transform 0.1s;
+  transition:
+    opacity 0.15s,
+    transform 0.1s;
 
-  &:active:not(:disabled) { transform: scale(0.97); }
-  &:hover:not(:disabled)  { opacity: 0.92; }
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  &:hover:not(:disabled) {
+    opacity: 0.92;
+  }
   &:disabled {
-    background: rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.28);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.28);
     box-shadow: none;
     cursor: not-allowed;
   }
@@ -169,10 +192,16 @@ button { cursor: pointer; }
   color: #fff;
   background: var(--sl-btn-confirm-grad);
   box-shadow: var(--sl-btn-confirm-shadow);
-  transition: opacity 0.15s, transform 0.1s;
+  transition:
+    opacity 0.15s,
+    transform 0.1s;
 
-  &:active { transform: scale(0.97); }
-  &:hover  { opacity: 0.92; }
+  &:active {
+    transform: scale(0.97);
+  }
+  &:hover {
+    opacity: 0.92;
+  }
 }
 
 /* ── Botão secundário ──────────────────────────────────────────────────── */
@@ -187,16 +216,24 @@ button { cursor: pointer; }
   font-size: 14px;
   color: var(--sl-text-2);
   background: var(--sl-glass);
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
 
-  &:active { transform: scale(0.97); }
-  &:hover  { background: var(--sl-glass-hover); }
+  &:active {
+    transform: scale(0.97);
+  }
+  &:hover {
+    background: var(--sl-glass-hover);
+  }
 }
 
 /* ── Scrollbar oculta ──────────────────────────────────────────────────── */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 </style>
