@@ -170,11 +170,16 @@ onMounted(() => {
       </label>
       <input
         id="room-id"
-        v-model.trim="storeSocket.gameId"
+        :value="storeSocket.gameId"
         type="text"
         placeholder="Ex: sala-dos-amigos"
         autocomplete="off"
-        class="w-full px-4 py-3 rounded-xl bg-white/15 text-white text-lg text-center border-2 border-white/20 focus:border-white/60 focus:outline-none placeholder-white/30 transition-colors"
+        autocapitalize="none"
+        autocorrect="off"
+        spellcheck="false"
+        inputmode="text"
+        class="w-full px-4 py-3 rounded-xl bg-white/15 text-white text-lg text-center border-2 border-white/20 focus:border-white/60 focus:outline-none placeholder-white/30 transition-colors lowercase"
+        @input="storeSocket.gameId = ($event.target as HTMLInputElement).value.toLowerCase().trim()"
       />
     </div>
 
@@ -189,6 +194,7 @@ onMounted(() => {
         placeholder="Ex: batatinha123"
         maxlength="24"
         autocomplete="nickname"
+        inputmode="text"
         class="w-full px-4 py-3 rounded-xl bg-white/15 text-white text-lg text-center border-2 border-white/20 focus:border-white/60 focus:outline-none placeholder-white/30 transition-colors"
       />
     </div>

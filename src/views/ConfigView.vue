@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
@@ -44,6 +44,10 @@ const reset = () => {
   timerStory.value = storeSettings.baseTimerStory
   turns.value = storeSettings.turnMax
 }
+
+onMounted(() => {
+  document.getElementById('config-btn')?.focus()
+})
 </script>
 
 <template>
@@ -152,7 +156,9 @@ const reset = () => {
     </div>
 
     <!-- Confirmar -->
-    <button class="sl-btn py-5 text-lg" @click="confirm">Confirmar e ir para o lobby</button>
+    <button id="config-btn" class="sl-btn py-5 text-lg" @click="confirm">
+      Confirmar e ir para o lobby
+    </button>
 
     <!-- Reset -->
     <button

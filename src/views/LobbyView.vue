@@ -11,7 +11,8 @@ const storeSocket = useSocketStore()
 useSeo({ title: 'Lobby', description: 'Vamos começar a jogar?' })
 
 const showConfirm = ref(false)
-const canStart = computed(() => storeSocket.room.length >= 2)
+const limitPlayersBeforeStart = ref(1)
+const canStart = computed(() => storeSocket.room.length >= limitPlayersBeforeStart.value)
 
 onMounted(() => {
   document.getElementById('start-btn')?.focus()
@@ -125,13 +126,14 @@ onMounted(() => {
 
     <!-- Aviso mínimo -->
     <div
-      v-if="storeSocket.room.length < 2"
+      v-if="storeSocket.room.length < limitPlayersBeforeStart"
       class="flex items-center gap-3 px-4 py-3 rounded-2xl"
       style="background: rgba(245, 158, 11, 0.15); border: 1.5px solid rgba(245, 158, 11, 0.35)"
     >
       <span class="text-base shrink-0">⚠️</span>
       <p class="text-sm font-semibold" style="color: #fcd34d">
-        Aguardando pelo menos mais 1 jogador
+        Aguardando pelo menos mais
+        {{ Math.abs(storeSocket.room.length - limitPlayersBeforeStart) }} jogador
       </p>
     </div>
 
