@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
 import TheCard from '@/components/TheCard.vue'
+import AvatarInitials from '@/components/AvatarInitials.vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
@@ -45,11 +46,10 @@ onUnmounted(() => {
 
     <!-- Meu jogador -->
     <div class="sl-surface flex items-center gap-3 px-4 py-3">
-      <img
-        :src="`https://avatar.iran.liara.run/username?username=${storeSocket.myPlayerName}`"
+      <AvatarInitials
         class="w-10 h-10 rounded-full shrink-0"
         style="border: 1.5px solid rgba(255, 255, 255, 0.25)"
-        :alt="storeSocket.myPlayerName"
+        :alt="storeSocket.myPlayerName!"
       />
       <div class="flex-1 min-w-0">
         <p class="sl-label">Você</p>

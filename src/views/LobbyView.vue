@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
 
+import AvatarInitials from '@/components/AvatarInitials.vue'
 import TheGameRules from '@/components/TheGameRules.vue'
 import BaseConfirmModal from '@/components/BaseConfirmModal.vue'
 
@@ -75,8 +76,7 @@ onMounted(() => {
           </div>
 
           <!-- Avatar -->
-          <img
-            :src="`https://avatar.iran.liara.run/username?username=${player.name}`"
+          <AvatarInitials
             class="w-8 h-8 rounded-full shrink-0"
             style="border: 1.5px solid rgba(255, 255, 255, 0.2)"
             :alt="player.name"
