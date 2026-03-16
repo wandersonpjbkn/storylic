@@ -28,10 +28,12 @@ const hash = computed(() => {
   return Math.abs(hash)
 })
 const avatarStyle = computed(() => {
+  const base = `hsl(${hash.value % 360} 60% 45%)`
   const lighten = `hsl(${hash.value % 360} 60% 65%)`
   const darken = `hsl(${hash.value % 360} 60% 35%)`
 
   return {
+    backgroundColor: base,
     backgroundImage: `linear-gradient(135deg,${lighten},${darken})`,
     color: '#fff',
   }
