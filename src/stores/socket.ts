@@ -78,6 +78,8 @@ export const useSocketStore = defineStore('socket', () => {
 
     socket.value = io(serverUrl.value)
 
+    /** Listeners */
+
     socket.value.on('connect', () => {
       mySocketId.value = socket.value?.id ?? ''
       isConnected.value = true
@@ -119,12 +121,21 @@ export const useSocketStore = defineStore('socket', () => {
       }) => {
         const myName = room.value.find((p) => p.id === mySocketId.value)?.name ?? ''
         saveSession(token, gId, myName)
+        storeSettings.playerName = ''
 
-        if (isCreator) {
-          goTo('config')
-        }
+        goTo(isCreator ? 'config' : 'lobby')
       },
     )
+
+    socket.value.on('join-error', ({ reason }: { reason: string }) => {
+      justJoined.value = false
+      storeSettings.numPlayers = 0
+      storeGlobal.openNotification({
+        title: reason,
+        message: 'Crie uma nova sala ou busque uma existente.',
+        type: 'warning',
+      })
+    })
 
     socket.value.on(
       'rejoin-ack',
@@ -342,6 +353,8 @@ export const useSocketStore = defineStore('socket', () => {
     )
   }
 
+  /** Emits */
+
   const emitJoinGame = () => {
     if (!gameId.value || !storeSettings.playerName) {
       let message = ''
@@ -356,8 +369,6 @@ export const useSocketStore = defineStore('socket', () => {
     storeSettings.numPlayers = 0
 
     socket.value?.emit('join-game', { gameId: gameId.value, playerName: storeSettings.playerName })
-    goTo('lobby')
-    storeSettings.playerName = ''
   }
 
   const emitStartGame = () => {

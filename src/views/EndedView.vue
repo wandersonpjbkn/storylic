@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import Reload from '@/assets/icons/Reload.vue'
 import { useSocketStore } from '@/stores/socket'
 import { useSeo } from '@/composables/useSeo'
+import BaseIcon from '@/components/BaseIcon.vue'
 
 const storeSocket = useSocketStore()
 useSeo({ title: 'Jogo Finalizado', description: 'Obrigado por jogar' })
@@ -20,7 +20,7 @@ useSeo({ title: 'Jogo Finalizado', description: 'Obrigado por jogar' })
       style="width: auto"
       @click="storeSocket.emitResetGame"
     >
-      <Reload class="w-5 h-5 mr-2" />
+      <BaseIcon name="reload" class="w-5 h-5 mr-2" />
       Jogar novamente
     </button>
 

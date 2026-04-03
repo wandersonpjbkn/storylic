@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue'
 
-import Checkmark from '@/assets/icons/Checkmark.vue'
+import BaseIcon from '@/components/BaseIcon.vue'
 
 import { categoryImagePath } from '@/composables/useCardImage'
 
@@ -150,7 +150,7 @@ const onImgError = () => {
         v-if="selected"
         class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-md z-20"
       >
-        <Checkmark />
+        <BaseIcon name="checkmark" class="w-3 h-3" />
       </div>
     </div>
 

@@ -1,19 +1,45 @@
 <script lang="ts" setup>
 import { computed, watch } from 'vue'
 
-import Alert from '@/assets/icons/Alert.vue'
-import Error from '@/assets/icons/Error.vue'
-import Info from '@/assets/icons/Info.vue'
-import Success from '@/assets/icons/Success.vue'
-import Times from '@/assets/icons/Times.vue'
+import BaseIcon from '@/components/BaseIcon.vue'
 
 import { useGlobalStore } from '@/stores/global'
+
+type UIcons =
+  // UI
+  // used
+  | 'alert'
+  | 'checkmark'
+  | 'error'
+  | 'favicon'
+  | 'info'
+  | 'reload'
+  | 'shuffle'
+  | 'times'
+  // unused
+  | 'clock'
+  | 'home'
+  | 'success'
+  | 'users'
 
 const storeGlobal = useGlobalStore()
 
 const notification = computed(() => storeGlobal.notification)
 const duration = computed(() => {
   return `--duration: ${storeGlobal.notificationDuration}ms`
+})
+const icon = computed((): { name: UIcons; color: string } => {
+  switch (notification.value.type) {
+    case 'success':
+      return { name: 'checkmark', color: 'green-400' }
+    case 'error':
+      return { name: 'error', color: 'red-400' }
+    case 'warning':
+      return { name: 'alert', color: 'yellow-400' }
+    case 'info':
+    default:
+      return { name: 'info', color: 'blue-400' }
+  }
 })
 
 watch(notification, ({ message }) => {
@@ -41,33 +67,30 @@ watch(notification, ({ message }) => {
     >
       <div
         :class="[
-          'bg-white/10 backdrop-blur-lg rounded-xl p-6 shadow-2xl border-2 transform transition-all',
+          'bg-white/10 backdrop-blur-lg rounded-xl p-4 shadow-2xl border-2 transform transition-all',
           notification.type === 'success' ? 'border-green-400/50' : '',
           notification.type === 'error' ? 'border-red-400/50' : '',
           notification.type === 'warning' ? 'border-yellow-400/50' : '',
           notification.type === 'info' ? 'border-blue-400/50' : '',
         ]"
       >
-        <div class="flex items-start gap-4">
+        <div class="flex items-start gap-3">
           <!-- Icon -->
           <div
             :class="[
-              'shrink-0 w-10 h-10 rounded-full flex items-center justify-center',
+              'shrink-0 w-8 h-8 rounded-full flex items-center justify-center',
               notification.type === 'success' ? 'bg-green-500/20' : '',
               notification.type === 'error' ? 'bg-red-500/20' : '',
               notification.type === 'warning' ? 'bg-yellow-500/20' : '',
               notification.type === 'info' ? 'bg-blue-500/20' : '',
             ]"
           >
-            <Success v-if="notification.type === 'success'" class="w-6 h-6 text-green-400" />
-            <Error v-else-if="notification.type === 'error'" class="w-6 h-6 text-red-400" />
-            <Alert v-else-if="notification.type === 'warning'" class="w-6 h-6 text-yellow-400" />
-            <Info v-else class="w-6 h-6 text-blue-400" />
+            <BaseIcon :name="icon.name" :class="`w-4 h-4 text-${icon.color}`" />
           </div>
 
           <!-- Content -->
           <div class="flex-1 min-w-0">
-            <h3 class="text-lg font-semibold text-white mb-1">{{ notification.title }}</h3>
+            <p class="text-md font-semibold text-white mb-1">{{ notification.title }}</p>
             <p class="text-white/80 text-sm">{{ notification.message }}</p>
           </div>
 
@@ -76,7 +99,7 @@ watch(notification, ({ message }) => {
             class="shrink-0 text-white/60 hover:text-white transition-colors"
             @click="storeGlobal.closeNotification"
           >
-            <Times />
+            <BaseIcon name="times" class="w-5 h-5" />
           </button>
         </div>
 
@@ -90,7 +113,7 @@ watch(notification, ({ message }) => {
               notification.type === 'warning' ? 'bg-yellow-400' : '',
               notification.type === 'info' ? 'bg-blue-400' : '',
             ]"
-          ></div>
+          />
         </div>
       </div>
     </div>

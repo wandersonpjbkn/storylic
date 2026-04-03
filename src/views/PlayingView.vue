@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 
-import Shuffle from '@/assets/icons/Shuffle.vue'
+import BaseIcon from '@/components/BaseIcon.vue'
 import TheCard from '@/components/TheCard.vue'
 import TheTimer from '@/components/TheTimer.vue'
 
@@ -79,7 +79,7 @@ const finishTurn = () => {
       class="sl-btn-ghost w-full py-3 flex items-center justify-center gap-2"
       @click="storeCards.shuffleDisplayedCards"
     >
-      <Shuffle class="w-4 h-4 shrink-0" />
+      <BaseIcon name="shuffle" class="w-4 h-4 shrink-0" />
       <span class="text-sm">Shuffle</span>
     </button>
 

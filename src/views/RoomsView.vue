@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import Favicon from '@/assets/icons/Favicon.vue'
+import BaseIcon from '@/components/BaseIcon.vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSeo } from '@/composables/useSeo'
@@ -98,7 +98,7 @@ onUnmounted(() => {
     <!-- Header -->
     <div class="flex items-center justify-between mb-8 flex-wrap gap-4">
       <div class="flex items-center gap-3">
-        <Favicon class="w-10 h-10" />
+        <BaseIcon name="favicon" class="w-10 h-10" />
         <div>
           <h1 class="text-2xl font-bold text-white leading-tight">Salas ativas</h1>
           <p class="text-white/50 text-sm">{{ rooms.length }} sala(s) encontrada(s)</p>

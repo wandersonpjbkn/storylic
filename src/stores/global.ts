@@ -11,7 +11,7 @@ interface Notification {
 
 export const useGlobalStore = defineStore('global', () => {
   // state
-  const baseDuration = ref(6000)
+  const baseDuration = ref(5000)
   const notification = ref<Notification>({
     show: false,
     title: '',

@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-import Favicon from '@/assets/icons/Favicon.vue'
+import BaseIcon from '@/components/BaseIcon.vue'
 import TheRoomRules from '@/components/TheRoomRules.vue'
 
 import { useSocketStore } from '@/stores/socket'
@@ -63,7 +63,7 @@ onMounted(() => {
     @submit.prevent="returnToRoom"
   >
     <div class="flex justify-center items-center gap-3 mb-2">
-      <Favicon class="w-16 h-16" />
+      <BaseIcon name="favicon" class="w-16 h-16" />
       <h1 class="text-4xl font-bold text-white text-center">Storylic</h1>
     </div>
     <p class="text-white/70 text-center mb-8 text-sm">Você já está em uma sala. Deseja voltar?</p>
@@ -134,7 +134,7 @@ onMounted(() => {
     @submit.prevent="storeSocket.emitJoinGame"
   >
     <div class="flex justify-center items-center gap-3 mb-2">
-      <Favicon class="w-16 h-16" />
+      <BaseIcon name="favicon" class="w-16 h-16" />
       <h1 class="text-4xl font-bold text-white text-center">Storylic</h1>
     </div>
     <p class="text-white/70 text-center mb-8 text-sm leading-relaxed">

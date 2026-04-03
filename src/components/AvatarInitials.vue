@@ -5,6 +5,7 @@ const props = defineProps<{
   alt: string
 }>()
 
+// text
 const initialLetters = computed(() => {
   return props.alt
     ?.trim()
@@ -17,6 +18,8 @@ const initialLetters = computed(() => {
 const normalizedAlt = computed(() => {
   return props.alt?.trim().toLowerCase() || ''
 })
+
+// color
 const hash = computed(() => {
   let hash = 0
 
@@ -27,14 +30,25 @@ const hash = computed(() => {
 
   return Math.abs(hash)
 })
+
+const hue = computed(() => hash.value % 360)
+const percent = (val: number) => `${val}%`
+
+// style
 const avatarStyle = computed(() => {
-  const base = `hsl(${hash.value % 360} 60% 45%)`
-  const lighten = `hsl(${hash.value % 360} 60% 65%)`
-  const darken = `hsl(${hash.value % 360} 60% 35%)`
+  /**
+   * HSL
+   * @number hue: 0 -> 360
+   * @number saturation: 0 -> 100
+   * @number lightness: 0 -> 100
+   */
+  const base = `hsl(${hue.value} ${percent(60)} ${percent(45)})`
+  const lighten = `hsl(${hue.value} ${percent(60)} ${percent(65)})`
+  const darken = `hsl(${hue.value} ${percent(60)} ${percent(35)})`
 
   return {
-    backgroundColor: base,
-    backgroundImage: `linear-gradient(135deg,${lighten},${darken})`,
+    backgroundColor: base, // fallback
+    backgroundImage: `linear-gradient(135deg,${lighten},${darken})`, // style
     color: '#fff',
   }
 })
@@ -42,22 +56,11 @@ const avatarStyle = computed(() => {
 
 <template>
   <div v-bind="$attrs">
-    <div class="avatar" :style="avatarStyle">
+    <div
+      class="flex w-full h-full rounded-full items-center justify-center font-semibold"
+      :style="avatarStyle"
+    >
       {{ initialLetters }}
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.avatar {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-
-  font-weight: 600;
-
-  align-items: center;
-  justify-content: center;
-}
-</style>
