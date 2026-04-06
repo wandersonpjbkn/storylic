@@ -6,6 +6,7 @@ import { useGlobalStore } from '@/stores/global'
 import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
 import { navigateTo } from '@/composables/useNavigator'
+import { SocketEvents } from '@/constants/socketEvents'
 
 interface Player {
   id: string
@@ -80,14 +81,17 @@ export const useSocketStore = defineStore('socket', () => {
 
     /** Listeners */
 
-    socket.value.on('connect', () => {
+    socket.value.on(SocketEvents.ON_CONNECT, () => {
       mySocketId.value = socket.value?.id ?? ''
       isConnected.value = true
 
       const session = loadSession()
       if (session) {
         isReconnecting.value = true
-        socket.value?.emit('rejoin-game', { gameId: session.gameId, token: session.token })
+        socket.value?.emit(SocketEvents.EMIT_REJOIN_GAME, {
+          gameId: session.gameId,
+          token: session.token,
+        })
       } else {
         storeGlobal.openNotification({
           title: 'Conectado',
@@ -98,7 +102,7 @@ export const useSocketStore = defineStore('socket', () => {
       }
     })
 
-    socket.value.on('disconnect', () => {
+    socket.value.on(SocketEvents.ON_DISCONNECT, () => {
       storeGlobal.openNotification({
         title: 'Desconectado',
         message: 'Conexão perdida. Tentando reconectar...',
@@ -109,7 +113,7 @@ export const useSocketStore = defineStore('socket', () => {
     })
 
     socket.value.on(
-      'join-ack',
+      SocketEvents.ON_JOIN_ACK,
       ({
         token,
         gameId: gId,
@@ -127,7 +131,7 @@ export const useSocketStore = defineStore('socket', () => {
       },
     )
 
-    socket.value.on('join-error', ({ reason }: { reason: string }) => {
+    socket.value.on(SocketEvents.ON_JOIN_ERROR, ({ reason }: { reason: string }) => {
       justJoined.value = false
       storeSettings.numPlayers = 0
       storeGlobal.openNotification({
@@ -138,7 +142,7 @@ export const useSocketStore = defineStore('socket', () => {
     })
 
     socket.value.on(
-      'rejoin-ack',
+      SocketEvents.ON_REJOIN_ACK,
       (data: {
         gameState: string
         currentPlayer: string
@@ -212,7 +216,7 @@ export const useSocketStore = defineStore('socket', () => {
       },
     )
 
-    socket.value.on('rejoin-error', ({ reason }: { reason: string }) => {
+    socket.value.on(SocketEvents.ON_REJOIN_ERROR, ({ reason }: { reason: string }) => {
       isReconnecting.value = false
       clearSession()
       storeGlobal.openNotification({
@@ -224,7 +228,7 @@ export const useSocketStore = defineStore('socket', () => {
       goTo('setup')
     })
 
-    socket.value.on('game-state', ({ currentPlayer, players }) => {
+    socket.value.on(SocketEvents.ON_GAME_STATE, ({ currentPlayer, players }) => {
       if (justJoined.value) {
         justJoined.value = false
         storeSettings.numPlayers = players.length
@@ -247,7 +251,7 @@ export const useSocketStore = defineStore('socket', () => {
       }
     })
 
-    socket.value.on('player-turn', (data) => {
+    socket.value.on(SocketEvents.ON_PLAYER_TURN, (data) => {
       storeSettings.turnCurrent = data.currentTurn
       currentPlayerNumber.value = data.currentPlayer
 
@@ -260,13 +264,13 @@ export const useSocketStore = defineStore('socket', () => {
       }
     })
 
-    socket.value.on('game-ended', () => {
+    socket.value.on(SocketEvents.ON_GAME_ENDED, () => {
       storeSettings.softResetGame()
       goTo('ended')
     })
 
     socket.value.on(
-      'game-reset',
+      SocketEvents.ON_GAME_RESET,
       ({
         reason,
         creatorId,
@@ -300,7 +304,7 @@ export const useSocketStore = defineStore('socket', () => {
     )
 
     socket.value.on(
-      'room-config',
+      SocketEvents.ON_ROOM_CONFIG,
       ({
         timerTurn,
         timerStory,
@@ -316,12 +320,12 @@ export const useSocketStore = defineStore('socket', () => {
       },
     )
 
-    socket.value.on('player-selected-cards', ({ cards, playerNumber }) => {
+    socket.value.on(SocketEvents.ON_PLAYER_SELECTED_CARDS, ({ cards, playerNumber }) => {
       console.log('Jogador', playerNumber, 'escolheu:', cards)
     })
 
     socket.value.on(
-      'player-disconnected',
+      SocketEvents.ON_PLAYER_DISCONNECTED,
       ({
         playerName,
         reservedFor,
@@ -340,7 +344,7 @@ export const useSocketStore = defineStore('socket', () => {
     )
 
     socket.value.on(
-      'player-reconnected',
+      SocketEvents.ON_PLAYER_RECONNECTED,
       ({ playerName, players }: { playerId: string; playerName: string; players: Player[] }) => {
         room.value = players
         storeGlobal.openNotification({
@@ -368,11 +372,14 @@ export const useSocketStore = defineStore('socket', () => {
     justJoined.value = true
     storeSettings.numPlayers = 0
 
-    socket.value?.emit('join-game', { gameId: gameId.value, playerName: storeSettings.playerName })
+    socket.value?.emit(SocketEvents.EMIT_JOIN_GAME, {
+      gameId: gameId.value,
+      playerName: storeSettings.playerName,
+    })
   }
 
   const emitStartGame = () => {
-    socket.value?.emit('start-game', {
+    socket.value?.emit(SocketEvents.EMIT_START_GAME, {
       gameId: gameId.value,
       currentPlayer: mySocketId.value,
       numPlayers: storeSettings.numPlayers,
@@ -382,7 +389,7 @@ export const useSocketStore = defineStore('socket', () => {
   }
 
   const emitSelectedCards = () => {
-    socket.value?.emit('cards-selected', {
+    socket.value?.emit(SocketEvents.EMIT_CARDS_SELECTED, {
       gameId: gameId.value,
       cards: storeCards.selectedCards,
       playerNumber: mySocketId.value,
@@ -390,14 +397,14 @@ export const useSocketStore = defineStore('socket', () => {
   }
 
   const emitFinishStoryAndNext = () => {
-    socket.value?.emit('finish-storytelling', {
+    socket.value?.emit(SocketEvents.EMIT_FINISH_STORYTELLING, {
       gameId: gameId.value,
       currentPlayer: mySocketId.value,
     })
   }
 
   const emitResetGame = () => {
-    socket.value?.emit('reset-game', { gameId: gameId.value })
+    socket.value?.emit(SocketEvents.EMIT_RESET_GAME, { gameId: gameId.value })
   }
 
   const emitConfigGame = ({
@@ -409,7 +416,7 @@ export const useSocketStore = defineStore('socket', () => {
     timerStory: number
     turns: number
   }) => {
-    socket.value?.emit('config-game', {
+    socket.value?.emit(SocketEvents.EMIT_CONFIG_GAME, {
       gameId: gameId.value,
       timerTurn,
       timerStory,
@@ -423,14 +430,17 @@ export const useSocketStore = defineStore('socket', () => {
     goTo('setup')
     storeSettings.numPlayers = 0
     justJoined.value = false
-    socket.value?.emit('leave-game', { gameId: leavingGameId, playerNumber: mySocketId.value })
+    socket.value?.emit(SocketEvents.EMIT_LEAVE_GAME, {
+      gameId: leavingGameId,
+      playerNumber: mySocketId.value,
+    })
     gameId.value = ''
   }
 
   const triggerRejoin = (targetGameId: string, token: string) => {
     gameId.value = targetGameId
     isReconnecting.value = true
-    socket.value?.emit('rejoin-game', { gameId: targetGameId, token })
+    socket.value?.emit(SocketEvents.EMIT_REJOIN_GAME, { gameId: targetGameId, token })
   }
 
   return {

@@ -7,6 +7,7 @@ import AvatarInitials from '@/components/AvatarInitials.vue'
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useSeo } from '@/composables/useSeo'
+import { SocketEvents } from '@/constants/socketEvents'
 
 interface Card {
   name: string
@@ -22,12 +23,15 @@ useSeo({ title: 'Sala de espera', description: 'Aguarde sua vez de jogar' })
 const currentCards = ref<Card[]>([])
 
 onMounted(() => {
-  storeSocket.socket?.on('player-selected-cards', ({ cards }: { cards: Card[] }) => {
-    currentCards.value = cards
-  })
+  storeSocket.socket?.on(
+    SocketEvents.ON_PLAYER_SELECTED_CARDS,
+    ({ cards }: { cards: Card[] }) => {
+      currentCards.value = cards
+    },
+  )
 })
 onUnmounted(() => {
-  storeSocket.socket?.off('player-selected-cards')
+  storeSocket.socket?.off(SocketEvents.ON_PLAYER_SELECTED_CARDS)
 })
 </script>
 

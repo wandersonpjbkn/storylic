@@ -6,6 +6,7 @@ import BaseIcon from '@/components/BaseIcon.vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSeo } from '@/composables/useSeo'
+import { SocketEvents } from '@/constants/socketEvents'
 
 interface RoomSnapshot {
   id: string
@@ -81,15 +82,15 @@ const goToSetup = () => router.push({ name: 'setup-view' })
 
 onMounted(() => {
   if (storeSocket.socket) {
-    storeSocket.socket.emit('get-rooms')
-    storeSocket.socket.on('rooms-updated', (data: RoomSnapshot[]) => {
+    storeSocket.socket.emit(SocketEvents.EMIT_GET_ROOMS)
+    storeSocket.socket.on(SocketEvents.ON_ROOMS_UPDATED, (data: RoomSnapshot[]) => {
       rooms.value = data
     })
   }
 })
 
 onUnmounted(() => {
-  storeSocket.socket?.off('rooms-updated')
+  storeSocket.socket?.off(SocketEvents.ON_ROOMS_UPDATED)
 })
 </script>
 
