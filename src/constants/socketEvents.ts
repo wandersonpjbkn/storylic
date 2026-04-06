@@ -1,4 +1,7 @@
 export enum SocketEvents {
+  // config
+  STORAGE_KEY = 'storylic_session',
+
   // state
   STATE_CONFIG = 'config',
   STATE_SETUP = 'setup',
@@ -12,32 +15,29 @@ export enum SocketEvents {
   // on
   ON_CONNECT = 'connect',
   ON_DISCONNECT = 'disconnect',
-  ON_CONFIG_ERROR = 'config-error',
-  ON_JOIN_ERROR = 'join-error',
   ON_JOIN_ACK = 'join-ack',
-  ON_REJOIN_ERROR = 'rejoin-error',
+  ON_JOIN_ERROR = 'join-error',
   ON_REJOIN_ACK = 'rejoin-ack',
-  ON_PLAYER_RECONNECTED = 'player-reconnected',
-  ON_LEAVE_ERROR = 'leave-error',
-  ON_START_ERROR = 'start-error',
-  ON_PLAYER_TURN = 'player-turn',
-  ON_PLAYER_SELECTED_CARDS = 'player-selected-cards',
-  ON_PLAYER_DISCONNECTED = 'player-disconnected',
-  ON_CARDS_SELECTED_ERROR = 'cards-selected-error',
-  ON_ROOMS_UPDATED = 'rooms-updated',
+  ON_REJOIN_ERROR = 'rejoin-error',
   ON_ROOM_CONFIG = 'room-config',
   ON_GAME_STATE = 'game-state',
   ON_GAME_ENDED = 'game-ended',
   ON_GAME_RESET = 'game-reset',
+  ON_PLAYER_TURN = 'player-turn',
+  ON_PLAYER_SELECTED_CARDS = 'player-selected-cards',
+  ON_PLAYER_DISCONNECTED = 'player-disconnected',
+  ON_PLAYER_RECONNECTED = 'player-reconnected',
+  ON_ROOMS_UPDATED = 'rooms-updated',
+  ON_CONFIG_ERROR = 'config-error',
 
   // emit
-  EMIT_CONFIG_GAME = 'config-game',
   EMIT_JOIN_GAME = 'join-game',
   EMIT_REJOIN_GAME = 'rejoin-game',
-  EMIT_START_GAME = 'start-game',
   EMIT_LEAVE_GAME = 'leave-game',
-  EMIT_CARDS_SELECTED = 'cards-selected',
-  EMIT_FINISH_STORYTELLING = 'finish-storytelling',
+  EMIT_START_GAME = 'start-game',
+  EMIT_CONFIG_GAME = 'config-game',
   EMIT_RESET_GAME = 'reset-game',
   EMIT_GET_ROOMS = 'get-rooms',
+  EMIT_CARDS_SELECTED = 'cards-selected',
+  EMIT_FINISH_STORYTELLING = 'finish-storytelling',
 }

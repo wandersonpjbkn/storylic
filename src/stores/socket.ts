@@ -29,7 +29,7 @@ type GameState =
   | SocketEvents.STATE_WAITING
   | SocketEvents.STATE_ENDED
 
-const SESSION_KEY = 'storylic_session'
+const SESSION_KEY = SocketEvents.STORAGE_KEY
 
 const saveSession = (token: string, gameId: string, playerName?: string) => {
   const existing = loadSession()

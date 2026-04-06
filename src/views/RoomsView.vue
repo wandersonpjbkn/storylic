@@ -30,7 +30,7 @@ const search = ref('')
 
 const activeSession = computed<{ gameId: string; token: string } | null>(() => {
   try {
-    const raw = sessionStorage.getItem('storylic_session')
+    const raw = sessionStorage.getItem(SocketEvents.STORAGE_KEY)
     return raw ? JSON.parse(raw) : null
   } catch {
     return null

@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { useSettingStore } from '@/stores/settings'
-import { GAME_ROUTES } from '@/composables/useNavigator'
+import { GAME_ROUTES, PUBLIC_ROUTES } from '@/composables/useNavigator'
+import { SocketEvents } from '@/constants/socketEvents'
 
 import SetupView from '@/views/SetupView.vue'
 import RoomsView from '@/views/RoomsView.vue'
@@ -61,19 +62,35 @@ const router = createRouter({
   },
 })
 
-router.beforeEach((to) => {
-  const isGameRoute = Object.values(GAME_ROUTES).includes(to.name as string)
-  if (!isGameRoute) return true
+const GAME_ONLY_ROUTES = Object.values(GAME_ROUTES).filter((name) => !PUBLIC_ROUTES.includes(name))
 
-  const hasSession = !!sessionStorage.getItem('storylic_session')
+router.beforeEach((to) => {
+  if (!GAME_ONLY_ROUTES.includes(to.name as string)) return true
+
+  const hasSession = !!sessionStorage.getItem(SocketEvents.STORAGE_KEY)
   if (hasSession) return true
 
   try {
     const storeSettings = useSettingStore()
-    const validStates = Object.keys(GAME_ROUTES)
-    if (validStates.includes(storeSettings.gameState)) return true
+    const currentState = storeSettings.gameState as string
+
+    const expectedState = Object.entries(GAME_ROUTES).find(
+      ([, routeName]) => routeName === to.name,
+    )?.[0]
+
+    if (expectedState && currentState === expectedState) return true
+
+    const inGameStates: string[] = [
+      SocketEvents.STATE_CONFIG,
+      SocketEvents.STATE_LOBBY,
+      SocketEvents.STATE_PLAYING,
+      SocketEvents.STATE_WAITING,
+      SocketEvents.STATE_STORYTELLING,
+      SocketEvents.STATE_ENDED,
+    ]
+    if (inGameStates.includes(currentState)) return true
   } catch (err) {
-    if (import.meta.env.DEV) console.warn(err)
+    if (import.meta.env.DEV) console.warn('[router guard]', err)
   }
 
   return { name: 'rooms-view' }

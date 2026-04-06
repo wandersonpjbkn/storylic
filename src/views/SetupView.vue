@@ -8,6 +8,7 @@ import TheRoomRules from '@/components/TheRoomRules.vue'
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useSeo } from '@/composables/useSeo'
+import { SocketEvents } from '@/constants/socketEvents'
 
 const router = useRouter()
 const storeSocket = useSocketStore()
@@ -17,7 +18,7 @@ useSeo({ title: 'Home', description: 'Crie histórias incríveis com cartas alea
 
 const activeSession = computed<{ token: string; gameId: string } | null>(() => {
   try {
-    const raw = sessionStorage.getItem('storylic_session')
+    const raw = sessionStorage.getItem(SocketEvents.STORAGE_KEY)
     return raw ? JSON.parse(raw) : null
   } catch {
     return null
@@ -26,7 +27,7 @@ const activeSession = computed<{ token: string; gameId: string } | null>(() => {
 
 const sessionPlayerName = computed(() => {
   try {
-    const raw = sessionStorage.getItem('storylic_session')
+    const raw = sessionStorage.getItem(SocketEvents.STORAGE_KEY)
     if (raw) {
       const session = JSON.parse(raw)
       if (session.playerName) return session.playerName
