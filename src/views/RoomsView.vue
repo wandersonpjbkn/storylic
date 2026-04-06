@@ -11,7 +11,12 @@ import { SocketEvents } from '@/constants/socketEvents'
 interface RoomSnapshot {
   id: string
   playerCount: number
-  gameState: 'setup' | 'lobby' | 'playing' | 'waiting' | 'ended'
+  gameState:
+    | SocketEvents.STATE_SETUP
+    | SocketEvents.STATE_LOBBY
+    | SocketEvents.STATE_PLAYING
+    | SocketEvents.STATE_WAITING
+    | SocketEvents.STATE_ENDED
   players: string[]
 }
 
@@ -53,7 +58,8 @@ const statusColor: Record<RoomSnapshot['gameState'], string> = {
   ended: 'bg-white/10 text-white/40 border border-white/10',
 }
 
-const canJoin = (room: RoomSnapshot) => room.gameState === 'setup' || room.gameState === 'lobby'
+const canJoin = (room: RoomSnapshot) =>
+  room.gameState === SocketEvents.STATE_SETUP || room.gameState === SocketEvents.STATE_LOBBY
 
 const isMyRoom = (room: RoomSnapshot) => activeSession.value?.gameId === room.id
 
@@ -159,9 +165,10 @@ onUnmounted(() => {
           <div
             :class="[
               'shrink-0 w-2.5 h-2.5 rounded-full',
-              room.gameState === 'setup' || room.gameState === 'lobby'
+              room.gameState === SocketEvents.STATE_SETUP ||
+              room.gameState === SocketEvents.STATE_LOBBY
                 ? 'bg-emerald-400'
-                : room.gameState === 'ended'
+                : room.gameState === SocketEvents.STATE_ENDED
                   ? 'bg-white/30'
                   : 'bg-yellow-400',
             ]"

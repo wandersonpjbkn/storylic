@@ -13,13 +13,23 @@ interface Player {
   name: string
 }
 
-const SESSION_KEY = 'storylic_session'
-
 interface StoredSession {
   token: string
   gameId: string
   playerName?: string
 }
+
+type GameState =
+  | SocketEvents.STATE_CONFIG
+  | SocketEvents.STATE_SETUP
+  | SocketEvents.STATE_LOBBY
+  | SocketEvents.STATE_ROOMS
+  | SocketEvents.STATE_PLAYING
+  | SocketEvents.STATE_STORYTELLING
+  | SocketEvents.STATE_WAITING
+  | SocketEvents.STATE_ENDED
+
+const SESSION_KEY = 'storylic_session'
 
 const saveSession = (token: string, gameId: string, playerName?: string) => {
   const existing = loadSession()
@@ -59,8 +69,9 @@ export const useSocketStore = defineStore('socket', () => {
   const isReconnecting = ref(false)
 
   const justJoined = ref(false)
+  const pendingPlayerName = ref('')
 
-  const goTo = (state: string) => {
+  const goTo = (state: GameState) => {
     storeSettings.gameState = state
     navigateTo(state)
   }
@@ -123,11 +134,10 @@ export const useSocketStore = defineStore('socket', () => {
         gameId: string
         isCreator: boolean
       }) => {
-        const myName = room.value.find((p) => p.id === mySocketId.value)?.name ?? ''
-        saveSession(token, gId, myName)
-        storeSettings.playerName = ''
+        saveSession(token, gId, pendingPlayerName.value)
+        pendingPlayerName.value = ''
 
-        goTo(isCreator ? 'config' : 'lobby')
+        goTo(isCreator ? SocketEvents.STATE_CONFIG : SocketEvents.STATE_LOBBY)
       },
     )
 
@@ -179,38 +189,38 @@ export const useSocketStore = defineStore('socket', () => {
         })
 
         switch (data.gameState) {
-          case 'lobby':
-            goTo('lobby')
+          case SocketEvents.STATE_LOBBY:
+            goTo(SocketEvents.STATE_LOBBY)
             break
-          case 'playing':
+          case SocketEvents.STATE_PLAYING:
             if (data.isMyTurn) {
               storeSettings.restoreTimer(Math.round(data.remainingTurnMs / 1000))
               storeSettings.startGame()
-              navigateTo('playing')
+              navigateTo(SocketEvents.STATE_PLAYING)
             } else {
               storeSettings.resetTimers()
-              goTo('waiting')
+              goTo(SocketEvents.STATE_WAITING)
             }
             break
-          case 'storytelling':
+          case SocketEvents.STATE_STORYTELLING:
             if (data.isMyTurn) {
               storeSettings.restoreStoryTimer(Math.round(data.remainingTurnMs / 1000))
-              goTo('storytelling')
+              goTo(SocketEvents.STATE_STORYTELLING)
             } else {
-              goTo('waiting')
+              goTo(SocketEvents.STATE_WAITING)
             }
             break
-          case 'waiting':
+          case SocketEvents.STATE_WAITING:
             storeSettings.resetTimers()
-            goTo('waiting')
+            goTo(SocketEvents.STATE_WAITING)
             break
-          case 'ended':
+          case SocketEvents.STATE_ENDED:
             clearSession()
-            goTo('ended')
+            goTo(SocketEvents.STATE_ENDED)
             break
           default:
             clearSession()
-            goTo('setup')
+            goTo(SocketEvents.STATE_SETUP)
             break
         }
       },
@@ -225,7 +235,7 @@ export const useSocketStore = defineStore('socket', () => {
         type: 'warning',
         duration: 5000,
       })
-      goTo('setup')
+      goTo(SocketEvents.STATE_SETUP)
     })
 
     socket.value.on(SocketEvents.ON_GAME_STATE, ({ currentPlayer, players }) => {
@@ -242,7 +252,7 @@ export const useSocketStore = defineStore('socket', () => {
       currentPlayerNumber.value = currentPlayer
       room.value = players
 
-      if (storeSettings.gameState === 'lobby') {
+      if (storeSettings.gameState === SocketEvents.STATE_LOBBY) {
         storeGlobal.openNotification({
           title: 'Sala atualizada',
           message: wasSmaller ? 'Novo jogador na sala' : 'Um jogador saiu',
@@ -257,16 +267,16 @@ export const useSocketStore = defineStore('socket', () => {
 
       if (data.currentPlayer === mySocketId.value) {
         storeSettings.startGame()
-        goTo('playing')
+        goTo(SocketEvents.STATE_PLAYING)
       } else {
         storeSettings.resetTimers()
-        goTo('waiting')
+        goTo(SocketEvents.STATE_WAITING)
       }
     })
 
     socket.value.on(SocketEvents.ON_GAME_ENDED, () => {
       storeSettings.softResetGame()
-      goTo('ended')
+      goTo(SocketEvents.STATE_ENDED)
     })
 
     socket.value.on(
@@ -291,14 +301,14 @@ export const useSocketStore = defineStore('socket', () => {
           storeSettings.softResetGame()
 
           if (creatorId && creatorId === mySocketId.value) {
-            goTo('config')
+            goTo(SocketEvents.STATE_CONFIG)
           } else {
-            goTo('lobby')
+            goTo(SocketEvents.STATE_LOBBY)
           }
         } else {
           clearSession()
           storeSettings.resetGame()
-          goTo('rooms')
+          goTo(SocketEvents.STATE_ROOMS)
         }
       },
     )
@@ -319,6 +329,15 @@ export const useSocketStore = defineStore('socket', () => {
         storeSettings.turnMax = turns
       },
     )
+
+    socket.value.on(SocketEvents.ON_CONFIG_ERROR, ({ reason }: { reason: string }) => {
+      storeGlobal.openNotification({
+        title: 'Erro na configuração',
+        message: reason,
+        type: 'error',
+        duration: 4000,
+      })
+    })
 
     socket.value.on(SocketEvents.ON_PLAYER_SELECTED_CARDS, ({ cards, playerNumber }) => {
       console.log('Jogador', playerNumber, 'escolheu:', cards)
@@ -371,6 +390,7 @@ export const useSocketStore = defineStore('socket', () => {
 
     justJoined.value = true
     storeSettings.numPlayers = 0
+    pendingPlayerName.value = storeSettings.playerName
 
     socket.value?.emit(SocketEvents.EMIT_JOIN_GAME, {
       gameId: gameId.value,
@@ -427,7 +447,7 @@ export const useSocketStore = defineStore('socket', () => {
   const emitLeaveGame = () => {
     const leavingGameId = gameId.value
     clearSession()
-    goTo('setup')
+    goTo(SocketEvents.STATE_SETUP)
     storeSettings.numPlayers = 0
     justJoined.value = false
     socket.value?.emit(SocketEvents.EMIT_LEAVE_GAME, {

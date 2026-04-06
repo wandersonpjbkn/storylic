@@ -9,6 +9,7 @@ import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
 import { useSeo } from '@/composables/useSeo'
+import { SocketEvents } from '@/constants/socketEvents'
 
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
@@ -24,7 +25,7 @@ const slotsLeft = computed(() => 3 - storeCards.selectedCards.length)
 const finishTurn = () => {
   storeSettings.finishTurn()
   storeSocket.emitSelectedCards()
-  storeSocket.navigate('storytelling')
+  storeSocket.navigate(SocketEvents.STATE_STORYTELLING)
 }
 </script>
 

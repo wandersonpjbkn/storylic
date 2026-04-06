@@ -3,10 +3,22 @@ import { defineStore } from 'pinia'
 
 import { useCardsStore } from '@/stores/cards'
 
+import { SocketEvents } from '@/constants/socketEvents'
+
+type GameState =
+  | SocketEvents.STATE_CONFIG
+  | SocketEvents.STATE_SETUP
+  | SocketEvents.STATE_LOBBY
+  | SocketEvents.STATE_ROOMS
+  | SocketEvents.STATE_PLAYING
+  | SocketEvents.STATE_STORYTELLING
+  | SocketEvents.STATE_WAITING
+  | SocketEvents.STATE_ENDED
+
 export const useSettingStore = defineStore('settings', () => {
   const storeCard = useCardsStore()
 
-  const gameState = ref('setup')
+  const gameState = ref(SocketEvents.STATE_SETUP)
   const numPlayers = ref(0)
   const baseTimerTurn = ref(25)
   const baseTimerStory = ref(45)
@@ -23,8 +35,8 @@ export const useSettingStore = defineStore('settings', () => {
   const isStoryRunning = ref(false)
 
   // Callback de navegação injetado pelo socket store após inicialização.
-  let _onNavigate: ((state: string) => void) | null = null
-  const setNavigateCallback = (fn: (state: string) => void) => {
+  let _onNavigate: ((state: GameState) => void) | null = null
+  const setNavigateCallback = (fn: (state: GameState) => void) => {
     _onNavigate = fn
   }
 
@@ -68,7 +80,7 @@ export const useSettingStore = defineStore('settings', () => {
       } else {
         finishTurn()
         _onTurnAutoFinished?.()
-        _onNavigate?.('storytelling')
+        _onNavigate?.(SocketEvents.STATE_STORYTELLING)
       }
     }, 1000)
   }
@@ -92,6 +104,9 @@ export const useSettingStore = defineStore('settings', () => {
   const restoreStoryTimer = (remainingSeconds: number) => {
     stopTimerStory()
     timerStory.value = remainingSeconds > 0 ? remainingSeconds : 0
+    if (timerStory.value > 0) {
+      startTimerStory()
+    }
   }
 
   const finishTurn = () => {
@@ -101,12 +116,13 @@ export const useSettingStore = defineStore('settings', () => {
       storeCard.dealCards()
       storeCard.selectedCards = storeCard.displayedCards
     }
-    gameState.value = 'storytelling'
+    gameState.value = SocketEvents.STATE_STORYTELLING
   }
 
   const startGame = () => {
-    gameState.value = 'playing'
+    gameState.value = SocketEvents.STATE_PLAYING
     storeCard.dealCards()
+    timerTurn.value = baseTimerTurn.value
     timerStory.value = baseTimerStory.value
     startTimerTurn()
   }
@@ -115,7 +131,7 @@ export const useSettingStore = defineStore('settings', () => {
     stopTimerTurn()
     stopTimerStory()
     storeCard.initializeDeck()
-    gameState.value = 'lobby'
+    gameState.value = SocketEvents.STATE_LOBBY
     turnCurrent.value = 1
     timerTurn.value = baseTimerTurn.value
     timerStory.value = baseTimerStory.value
@@ -127,7 +143,7 @@ export const useSettingStore = defineStore('settings', () => {
     stopTimerTurn()
     stopTimerStory()
     storeCard.initializeDeck()
-    gameState.value = 'setup'
+    gameState.value = SocketEvents.STATE_SETUP
     turnCurrent.value = 1
     timerTurn.value = baseTimerTurn.value
     timerStory.value = baseTimerStory.value

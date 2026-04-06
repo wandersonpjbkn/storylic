@@ -4,6 +4,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useSeo } from '@/composables/useSeo'
+import { SocketEvents } from '@/constants/socketEvents'
 
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
@@ -36,7 +37,7 @@ const confirm = () => {
     turns: turns.value,
   })
 
-  storeSocket.navigate('lobby')
+  storeSocket.navigate(SocketEvents.STATE_LOBBY)
 }
 
 const reset = () => {

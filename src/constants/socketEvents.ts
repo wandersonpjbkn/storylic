@@ -1,16 +1,15 @@
 export enum SocketEvents {
-  // emit (client -> server)
-  EMIT_CONFIG_GAME = 'config-game',
-  EMIT_JOIN_GAME = 'join-game',
-  EMIT_REJOIN_GAME = 'rejoin-game',
-  EMIT_START_GAME = 'start-game',
-  EMIT_LEAVE_GAME = 'leave-game',
-  EMIT_CARDS_SELECTED = 'cards-selected',
-  EMIT_FINISH_STORYTELLING = 'finish-storytelling',
-  EMIT_RESET_GAME = 'reset-game',
-  EMIT_GET_ROOMS = 'get-rooms',
+  // state
+  STATE_CONFIG = 'config',
+  STATE_SETUP = 'setup',
+  STATE_WAITING = 'waiting',
+  STATE_LOBBY = 'lobby',
+  STATE_ROOMS = 'rooms',
+  STATE_PLAYING = 'playing',
+  STATE_STORYTELLING = 'storytelling',
+  STATE_ENDED = 'ended',
 
-  // on (server -> client)
+  // on
   ON_CONNECT = 'connect',
   ON_DISCONNECT = 'disconnect',
   ON_CONFIG_ERROR = 'config-error',
@@ -30,4 +29,15 @@ export enum SocketEvents {
   ON_GAME_STATE = 'game-state',
   ON_GAME_ENDED = 'game-ended',
   ON_GAME_RESET = 'game-reset',
+
+  // emit
+  EMIT_CONFIG_GAME = 'config-game',
+  EMIT_JOIN_GAME = 'join-game',
+  EMIT_REJOIN_GAME = 'rejoin-game',
+  EMIT_START_GAME = 'start-game',
+  EMIT_LEAVE_GAME = 'leave-game',
+  EMIT_CARDS_SELECTED = 'cards-selected',
+  EMIT_FINISH_STORYTELLING = 'finish-storytelling',
+  EMIT_RESET_GAME = 'reset-game',
+  EMIT_GET_ROOMS = 'get-rooms',
 }
