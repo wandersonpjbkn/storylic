@@ -9,8 +9,6 @@
 
 /** Utils & Composables */
 
-import { meta as metadata } from '@/utils/seo'
-
 // ...
 
 /** Assets */
@@ -34,10 +32,6 @@ import { meta as metadata } from '@/utils/seo'
 // ...
 
 /** Content */
-
-metadata({
-  title: 'ViewTitle',
-})
 
 // ...
 </script>

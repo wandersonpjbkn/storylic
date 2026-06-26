@@ -1,26 +1,8 @@
 <script lang="ts" setup>
 import { computed, watch } from 'vue'
 
-import BaseIcon from '@/components/BaseIcon.vue'
-
 import { useGlobalStore } from '@/stores/global'
-
-type UIcons =
-  // UI
-  // used
-  | 'alert'
-  | 'checkmark'
-  | 'error'
-  | 'favicon'
-  | 'info'
-  | 'reload'
-  | 'shuffle'
-  | 'times'
-  // unused
-  | 'clock'
-  | 'home'
-  | 'success'
-  | 'users'
+import type { UIcons } from '@/types'
 
 const storeGlobal = useGlobalStore()
 

@@ -3,31 +3,33 @@ import { ref, computed, onMounted } from 'vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
+import { useTimerStore } from '@/stores/timer'
 import { useSeo } from '@/composables/useSeo'
 import { SocketEvents } from '@/constants/socketEvents'
 
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
+const storeTimer = useTimerStore()
 
 useSeo({ title: 'Configurar sala', description: 'Defina as regras da partida' })
 
 // Valores locais — só persistem ao confirmar
-const timerTurn = ref(storeSettings.baseTimerTurn)
-const timerStory = ref(storeSettings.baseTimerStory)
+const timerTurn = ref(storeTimer.baseTimerTurn)
+const timerStory = ref(storeTimer.baseTimerStory)
 const turns = ref(storeSettings.turnMax)
 
 const hasChanges = computed(() => {
   return (
-    timerTurn.value !== storeSettings.baseTimerTurn ||
-    timerStory.value !== storeSettings.baseTimerStory ||
+    timerTurn.value !== storeTimer.baseTimerTurn ||
+    timerStory.value !== storeTimer.baseTimerStory ||
     turns.value !== storeSettings.turnMax
   )
 })
 
 const confirm = () => {
   // Persiste localmente
-  storeSettings.baseTimerTurn = timerTurn.value
-  storeSettings.baseTimerStory = timerStory.value
+  storeTimer.baseTimerTurn = timerTurn.value
+  storeTimer.baseTimerStory = timerStory.value
   storeSettings.turnMax = turns.value
 
   // Envia para o backend — todos na sala receberão room-config
@@ -41,8 +43,8 @@ const confirm = () => {
 }
 
 const reset = () => {
-  timerTurn.value = storeSettings.baseTimerTurn
-  timerStory.value = storeSettings.baseTimerStory
+  timerTurn.value = storeTimer.baseTimerTurn
+  timerStory.value = storeTimer.baseTimerStory
   turns.value = storeSettings.turnMax
 }
 
@@ -66,73 +68,34 @@ onMounted(() => {
     <!-- Configurações -->
     <div class="flex flex-col gap-3">
       <!-- Tempo de escolha dos cards -->
-      <div class="sl-surface px-5 py-4">
-        <div class="flex items-center justify-between mb-1">
-          <p class="text-white font-bold text-sm">Tempo para escolher cards</p>
-          <span class="font-black text-lg">{{ timerTurn }}s</span>
-        </div>
-        <p class="text-xs mb-4" style="color: rgba(255, 255, 255, 0.35)">
-          Quanto tempo cada jogador tem para montar a mão
-        </p>
-        <input
-          v-model.number="timerTurn"
-          type="range"
-          min="10"
-          max="60"
-          step="5"
-          class="sl-slider w-full"
-        />
-        <div class="flex justify-between mt-1">
-          <span class="text-xs" style="color: rgba(255, 255, 255, 0.25)">10s</span>
-          <span class="text-xs" style="color: rgba(255, 255, 255, 0.25)">60s</span>
-        </div>
-      </div>
+      <BaseSlider
+        v-model="timerTurn"
+        title="Tempo para escolher cards"
+        description="Quanto tempo cada jogador tem para montar a mão"
+        :min="10"
+        :max="60"
+        :step="5"
+      />
 
       <!-- Tempo de narração -->
-      <div class="sl-surface px-5 py-4">
-        <div class="flex items-center justify-between mb-1">
-          <p class="text-white font-bold text-sm">Tempo para narrar</p>
-          <span class="font-black text-lg">{{ timerStory }}s</span>
-        </div>
-        <p class="text-xs mb-4" style="color: rgba(255, 255, 255, 0.35)">
-          Quanto tempo cada jogador tem para contar seu trecho
-        </p>
-        <input
-          v-model.number="timerStory"
-          type="range"
-          min="20"
-          max="120"
-          step="5"
-          class="sl-slider w-full"
-        />
-        <div class="flex justify-between mt-1">
-          <span class="text-xs" style="color: rgba(255, 255, 255, 0.25)">20s</span>
-          <span class="text-xs" style="color: rgba(255, 255, 255, 0.25)">120s</span>
-        </div>
-      </div>
+      <BaseSlider
+        v-model="timerStory"
+        title="Tempo para narrar"
+        description="Quanto tempo cada jogador tem para contar seu trecho"
+        :min="20"
+        :max="120"
+        :step="5"
+      />
 
       <!-- Número de turnos -->
-      <div class="sl-surface px-5 py-4">
-        <div class="flex items-center justify-between mb-1">
-          <p class="text-white font-bold text-sm">Número de turnos</p>
-          <span class="font-black text-lg">{{ turns }}</span>
-        </div>
-        <p class="text-xs mb-4" style="color: rgba(255, 255, 255, 0.35)">
-          Quantas rodadas a história terá ao todo
-        </p>
-        <input
-          v-model.number="turns"
-          type="range"
-          min="1"
-          max="10"
-          step="1"
-          class="sl-slider w-full"
-        />
-        <div class="flex justify-between mt-1">
-          <span class="text-xs" style="color: rgba(255, 255, 255, 0.25)">1 turno</span>
-          <span class="text-xs" style="color: rgba(255, 255, 255, 0.25)">10 turnos</span>
-        </div>
-      </div>
+      <BaseSlider
+        v-model="turns"
+        title="Número de turnos"
+        description="Quantas rodadas a história terá ao todo"
+        :min="1"
+        :max="10"
+        :step="1"
+      />
     </div>
 
     <!-- Resumo visual -->

@@ -1,11 +1,8 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue'
 
-import BaseIcon from '@/components/BaseIcon.vue'
-
 import { categoryImagePath } from '@/composables/useCardImage'
-
-type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
+import type { Category } from '@/types'
 
 const props = withDefaults(
   defineProps<{

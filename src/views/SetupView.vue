@@ -2,7 +2,6 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
-import BaseIcon from '@/components/BaseIcon.vue'
 import TheRoomRules from '@/components/TheRoomRules.vue'
 
 import { useSocketStore } from '@/stores/socket'
@@ -15,15 +14,6 @@ const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 
 useSeo({ title: 'Home', description: 'Crie histórias incríveis com cartas aleatórias!' })
-
-const activeSession = computed<{ token: string; gameId: string } | null>(() => {
-  try {
-    const raw = sessionStorage.getItem(SocketEvents.STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-})
 
 const sessionPlayerName = computed(() => {
   try {
@@ -39,8 +29,8 @@ const sessionPlayerName = computed(() => {
 })
 
 const returnToRoom = () => {
-  if (!activeSession.value) return
-  storeSocket.triggerRejoin(activeSession.value.gameId, activeSession.value.token)
+  if (!storeSocket.activeSession) return
+  storeSocket.triggerRejoin(storeSocket.activeSession.gameId, storeSocket.activeSession.token)
 }
 
 const abandonRoom = () => {
@@ -50,7 +40,7 @@ const abandonRoom = () => {
 const goToRooms = () => router.push({ name: 'rooms-view' })
 
 onMounted(() => {
-  if (!activeSession.value && storeSocket.gameId) {
+  if (!storeSocket.activeSession && storeSocket.gameId) {
     const input = document.getElementById('player-name') as HTMLInputElement | null
     input?.focus()
   }
@@ -59,7 +49,7 @@ onMounted(() => {
 
 <template>
   <form
-    v-if="activeSession"
+    v-if="storeSocket.activeSession"
     class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20"
     @submit.prevent="returnToRoom"
   >
@@ -74,7 +64,7 @@ onMounted(() => {
       <div
         class="w-full px-4 py-3 rounded-xl bg-white/5 text-white/50 text-lg text-center border-2 border-white/10 select-none"
       >
-        {{ activeSession.gameId }}
+        {{ storeSocket.activeSession.gameId }}
       </div>
     </div>
 

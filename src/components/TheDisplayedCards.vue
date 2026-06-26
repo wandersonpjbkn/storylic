@@ -1,8 +1,7 @@
 <script lang="ts" setup>
-import TheCard from './TheCard.vue'
 import { useCardsStore } from '@/stores/cards'
-
-type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
+import TheCard from '@/components/TheCard.vue'
+import type { Category } from '@/types'
 
 const storeCards = useCardsStore()
 </script>

@@ -1,25 +1,25 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 
-import BaseIcon from '@/components/BaseIcon.vue'
-import TheCard from '@/components/TheCard.vue'
-import TheTimer from '@/components/TheTimer.vue'
-
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
+import { useTimerStore } from '@/stores/timer'
 import { useSeo } from '@/composables/useSeo'
 import { SocketEvents } from '@/constants/socketEvents'
+import type { Category } from '@/types'
+
+import TheCard from '@/components/TheCard.vue'
+import TheTimer from '@/components/TheTimer.vue'
 
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 const storeCards = useCardsStore()
+const storeTimer = useTimerStore()
 
 useSeo({ title: 'Jogando', description: 'Monte sua mão antes que o tempo acabe' })
 
-type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
-
-const timerTurn = computed(() => storeSettings.timerTurn)
+const timerTurn = computed(() => storeTimer.timerTurn)
 const slotsLeft = computed(() => 3 - storeCards.selectedCards.length)
 
 const finishTurn = () => {
@@ -47,11 +47,7 @@ const finishTurn = () => {
     </div>
 
     <!-- Timer -->
-    <TheTimer
-      :value="timerTurn"
-      :base="storeSettings.baseTimerTurn"
-      label="Tempo para montar a mão"
-    />
+    <TheTimer :value="timerTurn" :base="storeTimer.baseTimerTurn" label="Tempo para montar a mão" />
 
     <!-- Baralho disponível -->
     <div>

@@ -7,6 +7,8 @@ import VueGtm from '@gtm-support/vue-gtm'
 
 // components
 import App from './App.vue'
+import BaseIcon from '@/components/BaseIcon.vue'
+import BaseSlider from '@/components/BaseSlider.vue'
 
 // composables
 import router from './router'
@@ -38,6 +40,9 @@ app.use(VueGtm, {
 
 // config :: composables
 app.use(router)
+
+// config :: global components
+app.component('BaseIcon', BaseIcon).component('BaseSlider', BaseSlider)
 
 // build
 app.mount('#app')

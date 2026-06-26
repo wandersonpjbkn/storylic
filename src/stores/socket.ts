@@ -5,29 +5,11 @@ import { io, type Socket } from 'socket.io-client'
 import { useGlobalStore } from '@/stores/global'
 import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
+import { useTimerStore } from '@/stores/timer'
+
 import { navigateTo } from '@/composables/useNavigator'
 import { SocketEvents } from '@/constants/socketEvents'
-
-interface Player {
-  id: string
-  name: string
-}
-
-interface StoredSession {
-  token: string
-  gameId: string
-  playerName?: string
-}
-
-type GameState =
-  | SocketEvents.STATE_CONFIG
-  | SocketEvents.STATE_SETUP
-  | SocketEvents.STATE_LOBBY
-  | SocketEvents.STATE_ROOMS
-  | SocketEvents.STATE_PLAYING
-  | SocketEvents.STATE_STORYTELLING
-  | SocketEvents.STATE_WAITING
-  | SocketEvents.STATE_ENDED
+import type { Card, GameState, Player, StoredSession } from '@/types'
 
 const SESSION_KEY = SocketEvents.STORAGE_KEY
 
@@ -58,6 +40,7 @@ export const useSocketStore = defineStore('socket', () => {
   const storeGlobal = useGlobalStore()
   const storeSettings = useSettingStore()
   const storeCards = useCardsStore()
+  const storeTimer = useTimerStore()
 
   const serverUrl = ref(import.meta.env.VITE_SERVER_URL)
   const socket = ref<Socket | null>(null)
@@ -70,20 +53,30 @@ export const useSocketStore = defineStore('socket', () => {
 
   const justJoined = ref(false)
   const pendingPlayerName = ref('')
+  const selectedCards = ref<Card[]>([])
 
-  const goTo = (state: GameState) => {
+  const navigate = (state: GameState) => {
     storeSettings.gameState = state
     navigateTo(state)
   }
 
+  const activeSession = computed<{ gameId: string; token: string } | null>(() => {
+    try {
+      const raw = sessionStorage.getItem(SocketEvents.STORAGE_KEY)
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  })
   const myPlayerNumber = computed(() => mySocketId.value)
   const myPlayerName = computed(() => room.value.find(({ id }) => id === mySocketId.value)?.name)
   const currentPlayerName = computed(
     () => room.value.find(({ id }) => id === currentPlayerNumber.value)?.name,
   )
+  const currentCards = computed(() => selectedCards.value)
 
   const connectToServer = () => {
-    storeSettings.setNavigateCallback(goTo)
+    storeSettings.setNavigateCallback(navigate)
     storeSettings.setTurnAutoFinishedCallback(() => {
       emitSelectedCards()
     })
@@ -137,7 +130,7 @@ export const useSocketStore = defineStore('socket', () => {
         saveSession(token, gId, pendingPlayerName.value)
         pendingPlayerName.value = ''
 
-        goTo(isCreator ? SocketEvents.STATE_CONFIG : SocketEvents.STATE_LOBBY)
+        navigate(isCreator ? SocketEvents.STATE_CONFIG : SocketEvents.STATE_LOBBY)
       },
     )
 
@@ -178,8 +171,8 @@ export const useSocketStore = defineStore('socket', () => {
         storeSettings.turnCurrent = data.currentTurn
         storeSettings.turnMax = data.turns
 
-        if (data.timerTurn) storeSettings.baseTimerTurn = data.timerTurn
-        if (data.timerStory) storeSettings.baseTimerStory = data.timerStory
+        if (data.timerTurn) storeTimer.baseTimerTurn = data.timerTurn
+        if (data.timerStory) storeTimer.baseTimerStory = data.timerStory
 
         storeGlobal.openNotification({
           title: 'Reconectado!',
@@ -190,37 +183,37 @@ export const useSocketStore = defineStore('socket', () => {
 
         switch (data.gameState) {
           case SocketEvents.STATE_LOBBY:
-            goTo(SocketEvents.STATE_LOBBY)
+            navigate(SocketEvents.STATE_LOBBY)
             break
           case SocketEvents.STATE_PLAYING:
             if (data.isMyTurn) {
-              storeSettings.restoreTimer(Math.round(data.remainingTurnMs / 1000))
+              storeTimer.restoreTimer(Math.round(data.remainingTurnMs / 1000))
               storeSettings.startGame()
               navigateTo(SocketEvents.STATE_PLAYING)
             } else {
-              storeSettings.resetTimers()
-              goTo(SocketEvents.STATE_WAITING)
+              storeTimer.resetTimers()
+              navigate(SocketEvents.STATE_WAITING)
             }
             break
           case SocketEvents.STATE_STORYTELLING:
             if (data.isMyTurn) {
-              storeSettings.restoreStoryTimer(Math.round(data.remainingTurnMs / 1000))
-              goTo(SocketEvents.STATE_STORYTELLING)
+              storeTimer.restoreStoryTimer(Math.round(data.remainingTurnMs / 1000))
+              navigate(SocketEvents.STATE_STORYTELLING)
             } else {
-              goTo(SocketEvents.STATE_WAITING)
+              navigate(SocketEvents.STATE_WAITING)
             }
             break
           case SocketEvents.STATE_WAITING:
-            storeSettings.resetTimers()
-            goTo(SocketEvents.STATE_WAITING)
+            storeTimer.resetTimers()
+            navigate(SocketEvents.STATE_WAITING)
             break
           case SocketEvents.STATE_ENDED:
             clearSession()
-            goTo(SocketEvents.STATE_ENDED)
+            navigate(SocketEvents.STATE_ENDED)
             break
           default:
             clearSession()
-            goTo(SocketEvents.STATE_SETUP)
+            navigate(SocketEvents.STATE_SETUP)
             break
         }
       },
@@ -235,7 +228,7 @@ export const useSocketStore = defineStore('socket', () => {
         type: 'warning',
         duration: 5000,
       })
-      goTo(SocketEvents.STATE_SETUP)
+      navigate(SocketEvents.STATE_SETUP)
     })
 
     socket.value.on(SocketEvents.ON_GAME_STATE, ({ currentPlayer, players }) => {
@@ -267,16 +260,16 @@ export const useSocketStore = defineStore('socket', () => {
 
       if (data.currentPlayer === mySocketId.value) {
         storeSettings.startGame()
-        goTo(SocketEvents.STATE_PLAYING)
+        navigate(SocketEvents.STATE_PLAYING)
       } else {
-        storeSettings.resetTimers()
-        goTo(SocketEvents.STATE_WAITING)
+        storeTimer.resetTimers()
+        navigate(SocketEvents.STATE_WAITING)
       }
     })
 
     socket.value.on(SocketEvents.ON_GAME_ENDED, () => {
       storeSettings.softResetGame()
-      goTo(SocketEvents.STATE_ENDED)
+      navigate(SocketEvents.STATE_ENDED)
     })
 
     socket.value.on(
@@ -295,20 +288,20 @@ export const useSocketStore = defineStore('socket', () => {
         turns?: number
       } = {}) => {
         if (reason === 'new-game') {
-          if (timerTurn) storeSettings.baseTimerTurn = timerTurn
-          if (timerStory) storeSettings.baseTimerStory = timerStory
+          if (timerTurn) storeTimer.baseTimerTurn = timerTurn
+          if (timerStory) storeTimer.baseTimerStory = timerStory
           if (turns) storeSettings.turnMax = turns
           storeSettings.softResetGame()
 
           if (creatorId && creatorId === mySocketId.value) {
-            goTo(SocketEvents.STATE_CONFIG)
+            navigate(SocketEvents.STATE_CONFIG)
           } else {
-            goTo(SocketEvents.STATE_LOBBY)
+            navigate(SocketEvents.STATE_LOBBY)
           }
         } else {
           clearSession()
           storeSettings.resetGame()
-          goTo(SocketEvents.STATE_ROOMS)
+          navigate(SocketEvents.STATE_ROOMS)
         }
       },
     )
@@ -324,8 +317,8 @@ export const useSocketStore = defineStore('socket', () => {
         timerStory: number
         turns: number
       }) => {
-        storeSettings.baseTimerTurn = timerTurn
-        storeSettings.baseTimerStory = timerStory
+        storeTimer.baseTimerTurn = timerTurn
+        storeTimer.baseTimerStory = timerStory
         storeSettings.turnMax = turns
       },
     )
@@ -340,6 +333,7 @@ export const useSocketStore = defineStore('socket', () => {
     })
 
     socket.value.on(SocketEvents.ON_PLAYER_SELECTED_CARDS, ({ cards, playerNumber }) => {
+      selectedCards.value = cards
       console.log('Jogador', playerNumber, 'escolheu:', cards)
     })
 
@@ -404,7 +398,7 @@ export const useSocketStore = defineStore('socket', () => {
       currentPlayer: mySocketId.value,
       numPlayers: storeSettings.numPlayers,
       turns: storeSettings.turnMax,
-      turnDurationMs: storeSettings.baseTimerTurn * 1000,
+      turnDurationMs: storeTimer.baseTimerTurn * 1000,
     })
   }
 
@@ -447,7 +441,7 @@ export const useSocketStore = defineStore('socket', () => {
   const emitLeaveGame = () => {
     const leavingGameId = gameId.value
     clearSession()
-    goTo(SocketEvents.STATE_SETUP)
+    navigate(SocketEvents.STATE_SETUP)
     storeSettings.numPlayers = 0
     justJoined.value = false
     socket.value?.emit(SocketEvents.EMIT_LEAVE_GAME, {
@@ -469,12 +463,14 @@ export const useSocketStore = defineStore('socket', () => {
     isConnected,
     isReconnecting,
     room,
+    activeSession,
     currentPlayerNumber,
     myPlayerNumber,
     myPlayerName,
     currentPlayerName,
+    currentCards,
     connectToServer,
-    navigate: goTo,
+    navigate,
     triggerRejoin,
     emitJoinGame,
     emitConfigGame,

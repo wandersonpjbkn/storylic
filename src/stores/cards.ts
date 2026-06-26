@@ -9,20 +9,8 @@ import objects from '@/data/categories/objects.json'
 import personas from '@/data/categories/personas.json'
 import places from '@/data/categories/places.json'
 
-type Category =
-  | 'actions'
-  | 'animals'
-  | 'emotions'
-  | 'nature'
-  | 'objects'
-  | 'personas'
-  | 'places'
-  | string
-
-interface Card {
-  name: string
-  category: Category
-}
+import { shuffleArray } from '@/composables/useUtils'
+import type { Category, Card } from '@/types'
 
 export const useCardsStore = defineStore('cards', () => {
   // state
@@ -69,17 +57,6 @@ export const useCardsStore = defineStore('cards', () => {
     } else if (selectedCards.value.length < 3) {
       selectedCards.value.push(card)
     }
-  }
-  const shuffleArray = (array: Card[]): Card[] => {
-    const newArray = [...array]
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      const temp = newArray[i]
-
-      if (newArray[j]) newArray[i] = newArray[j]
-      if (temp) newArray[j] = temp
-    }
-    return newArray
   }
   const initializeDeck = () => {
     const allCards: Card[] = []

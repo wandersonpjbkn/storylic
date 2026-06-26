@@ -1,29 +1,30 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
 
-import TheTimer from '@/components/TheTimer.vue'
-import TheCard from '@/components/TheCard.vue'
-
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
+import { useTimerStore } from '@/stores/timer'
 import { useSeo } from '@/composables/useSeo'
+import type { Category } from '@/types'
 
-type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
+import TheTimer from '@/components/TheTimer.vue'
+import TheCard from '@/components/TheCard.vue'
 
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 const storeCards = useCardsStore()
+const storeTimer = useTimerStore()
 
 useSeo({ title: 'Contando histórias', description: 'Deixe sua imaginação voar' })
 
-const timerStory = computed(() => storeSettings.timerStory)
+const timerStory = computed(() => storeTimer.timerStory)
 const alreadyFinished = ref(false)
 
 const finishStoryAndNext = () => {
   if (alreadyFinished.value) return
   alreadyFinished.value = true
-  storeSettings.stopTimerStory()
+  storeTimer.stopTimerStory()
   storeSocket.emitFinishStoryAndNext()
 }
 
@@ -50,7 +51,7 @@ watch(timerStory, (v) => {
     </div>
 
     <!-- Timer -->
-    <TheTimer :value="timerStory" :base="storeSettings.baseTimerStory" label="Tempo para narrar" />
+    <TheTimer :value="timerStory" :base="storeTimer.baseTimerStory" label="Tempo para narrar" />
 
     <!-- Instrução -->
     <div class="sl-surface px-4 py-3 text-center">

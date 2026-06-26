@@ -1,22 +1,7 @@
 <script lang="ts" setup>
-import { computed, defineAsyncComponent } from 'vue'
+import { computed, defineAsyncComponent, onMounted } from 'vue'
 
-type UIcons =
-  // UI
-  // used
-  | 'alert'
-  | 'checkmark'
-  | 'error'
-  | 'favicon'
-  | 'info'
-  | 'reload'
-  | 'shuffle'
-  | 'times'
-  // unused
-  | 'clock'
-  | 'home'
-  | 'success'
-  | 'users'
+import type { UIcons } from '@/types'
 
 const props = defineProps<{
   name: UIcons
@@ -25,6 +10,10 @@ const props = defineProps<{
 const dynamicIcon = computed(() => {
   if (!props.name) return null
   return defineAsyncComponent(() => import(`@/assets/icons/${props.name}.svg`))
+})
+
+onMounted(() => {
+  console.log('BaseIcon mounted with name:', props.name)
 })
 </script>
 

@@ -5,14 +5,14 @@ import { RouterView, useRouter } from 'vue-router'
 import TheNotification from '@/components/TheNotification.vue'
 
 import { useSocketStore } from '@/stores/socket'
-import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
+import { useTimerStore } from '@/stores/timer'
 import { initNavigator } from '@/composables/useNavigator'
 
 const router = useRouter()
 const storeSocket = useSocketStore()
-const storeSettings = useSettingStore()
 const storeCards = useCardsStore()
+const storeTimer = useTimerStore()
 
 initNavigator(router)
 
@@ -23,7 +23,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (storeSocket.socket) storeSocket.socket.disconnect()
-  storeSettings.stopTimerTurn()
+  storeTimer.stopTimerTurn()
 })
 </script>
 

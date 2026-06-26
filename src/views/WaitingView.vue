@@ -1,35 +1,20 @@
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-
-import TheCard from '@/components/TheCard.vue'
-import AvatarInitials from '@/components/AvatarInitials.vue'
+import { onUnmounted } from 'vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useSeo } from '@/composables/useSeo'
 import { SocketEvents } from '@/constants/socketEvents'
+import type { Category } from '@/types'
 
-interface Card {
-  name: string
-  category: string
-}
-type Category = 'actions' | 'animals' | 'emotions' | 'nature' | 'objects' | 'personas' | 'places'
+import TheCard from '@/components/TheCard.vue'
+import AvatarInitials from '@/components/AvatarInitials.vue'
 
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 
 useSeo({ title: 'Sala de espera', description: 'Aguarde sua vez de jogar' })
 
-const currentCards = ref<Card[]>([])
-
-onMounted(() => {
-  storeSocket.socket?.on(
-    SocketEvents.ON_PLAYER_SELECTED_CARDS,
-    ({ cards }: { cards: Card[] }) => {
-      currentCards.value = cards
-    },
-  )
-})
 onUnmounted(() => {
   storeSocket.socket?.off(SocketEvents.ON_PLAYER_SELECTED_CARDS)
 })
@@ -71,11 +56,11 @@ onUnmounted(() => {
     </div>
 
     <!-- Cards do jogador atual -->
-    <template v-if="currentCards.length > 0">
+    <template v-if="storeSocket.currentCards.length > 0">
       <p class="sl-label">Cards de {{ storeSocket.currentPlayerName }}</p>
       <div class="grid grid-cols-3 gap-3">
         <TheCard
-          v-for="card in currentCards"
+          v-for="card in storeSocket.currentCards"
           :key="card.name"
           :name="card.name"
           :category="card.category as Category"

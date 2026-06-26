@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { useSocketStore } from '@/stores/socket'
 import { useSeo } from '@/composables/useSeo'
-import BaseIcon from '@/components/BaseIcon.vue'
 
 const storeSocket = useSocketStore()
 useSeo({ title: 'Jogo Finalizado', description: 'Obrigado por jogar' })

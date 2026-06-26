@@ -2,23 +2,10 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import BaseIcon from '@/components/BaseIcon.vue'
-
 import { useSocketStore } from '@/stores/socket'
 import { useSeo } from '@/composables/useSeo'
 import { SocketEvents } from '@/constants/socketEvents'
-
-interface RoomSnapshot {
-  id: string
-  playerCount: number
-  gameState:
-    | SocketEvents.STATE_SETUP
-    | SocketEvents.STATE_LOBBY
-    | SocketEvents.STATE_PLAYING
-    | SocketEvents.STATE_WAITING
-    | SocketEvents.STATE_ENDED
-  players: string[]
-}
+import type { RoomSnapshot } from '@/types'
 
 const router = useRouter()
 const storeSocket = useSocketStore()
@@ -27,15 +14,6 @@ useSeo({ title: 'Salas', description: 'Veja as salas ativas e entre em uma parti
 
 const rooms = ref<RoomSnapshot[]>([])
 const search = ref('')
-
-const activeSession = computed<{ gameId: string; token: string } | null>(() => {
-  try {
-    const raw = sessionStorage.getItem(SocketEvents.STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-})
 
 const filteredRooms = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -61,7 +39,7 @@ const statusColor: Record<RoomSnapshot['gameState'], string> = {
 const canJoin = (room: RoomSnapshot) =>
   room.gameState === SocketEvents.STATE_SETUP || room.gameState === SocketEvents.STATE_LOBBY
 
-const isMyRoom = (room: RoomSnapshot) => activeSession.value?.gameId === room.id
+const isMyRoom = (room: RoomSnapshot) => storeSocket.activeSession?.gameId === room.id
 
 const enterRoom = (roomId: string) => {
   storeSocket.gameId = roomId
@@ -69,7 +47,7 @@ const enterRoom = (roomId: string) => {
 }
 
 const returnToRoom = (roomId: string) => {
-  const session = activeSession.value
+  const session = storeSocket.activeSession
   if (session && session.gameId === roomId) {
     storeSocket.triggerRejoin(roomId, session.token)
   } else {
@@ -121,18 +99,20 @@ onUnmounted(() => {
 
     <!-- Sessão ativa detectada — banner de destaque -->
     <div
-      v-if="activeSession && rooms.some((r) => r.id === activeSession?.gameId)"
+      v-if="
+        storeSocket.activeSession && rooms.some((r) => r.id === storeSocket.activeSession?.gameId)
+      "
       class="mb-6 bg-purple-500/20 border border-purple-400/30 rounded-xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap"
     >
       <div>
         <p class="text-white font-semibold text-sm">Você tem uma sessão ativa</p>
         <p class="text-white/60 text-xs mt-0.5">
-          Sala: <span class="text-pink-300 font-mono">{{ activeSession.gameId }}</span>
+          Sala: <span class="text-pink-300 font-mono">{{ storeSocket.activeSession.gameId }}</span>
         </p>
       </div>
       <button
         class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all"
-        @click="returnToRoom(activeSession.gameId)"
+        @click="returnToRoom(storeSocket.activeSession.gameId)"
       >
         Voltar para a sala
       </button>
@@ -219,7 +199,8 @@ onUnmounted(() => {
                   : 'bg-white/5 text-white/25 cursor-not-allowed',
               ]"
               @click="
-                canJoin(room) && (activeSession ? abandonAndEnter(room.id) : enterRoom(room.id))
+                canJoin(room) &&
+                (storeSocket.activeSession ? abandonAndEnter(room.id) : enterRoom(room.id))
               "
             >
               {{ canJoin(room) ? 'Entrar' : 'Em andamento' }}

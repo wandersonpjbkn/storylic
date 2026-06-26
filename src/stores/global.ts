@@ -1,13 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
-interface Notification {
-  show?: boolean
-  title?: string
-  type?: 'success' | 'error' | 'warning' | 'info'
-  duration?: number
-  message: string
-}
+import type { Notification } from '@/types'
 
 export const useGlobalStore = defineStore('global', () => {
   // state
