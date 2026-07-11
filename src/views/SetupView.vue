@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 import TheRoomRules from '@/components/TheRoomRules.vue'
+import ServerSwitcher from '@/components/ServerSwitcher.vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
@@ -212,5 +213,7 @@ onMounted(() => {
     >
       🔍 Ver salas ativas
     </button>
+
+    <ServerSwitcher class="mt-4" />
   </form>
 </template>

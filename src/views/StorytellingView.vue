@@ -6,6 +6,7 @@ import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
 import { useTimerStore } from '@/stores/timer'
 import { useSeo } from '@/composables/useSeo'
+import { SocketEvents } from '@/constants/socketEvents'
 import type { Category } from '@/types'
 
 import TheTimer from '@/components/TheTimer.vue'
@@ -26,6 +27,15 @@ const finishStoryAndNext = () => {
   alreadyFinished.value = true
   storeTimer.stopTimerStory()
   storeSocket.emitFinishStoryAndNext()
+
+  // Rede de segurança: se em 6s o servidor não avançou o turno (emit perdido num
+  // blip de Wi-Fi), reabilita o botão para o jogador tentar de novo em vez de
+  // ficar preso em "Aguardando próximo turno...".
+  setTimeout(() => {
+    if (storeSettings.gameState === SocketEvents.STATE_STORYTELLING) {
+      alreadyFinished.value = false
+    }
+  }, 6000)
 }
 
 watch(timerStory, (v) => {

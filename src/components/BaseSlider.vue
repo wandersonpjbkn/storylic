@@ -5,7 +5,7 @@
       <span class="font-black text-lg">{{ model }}s</span>
     </div>
     <p class="text-xs mb-4" style="color: rgba(255, 255, 255, 0.35)">
-      {{ descr }}
+      {{ description }}
     </p>
     <input
       v-model.number="model"
@@ -27,7 +27,7 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   title: string
-  descr: string
+  description: string
   min: number
   max: number
   step: number

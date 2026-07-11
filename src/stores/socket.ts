@@ -12,6 +12,17 @@ import { SocketEvents } from '@/constants/socketEvents'
 import type { Card, GameState, Player, StoredSession } from '@/types'
 
 const SESSION_KEY = SocketEvents.STORAGE_KEY
+const SERVER_URL_KEY = 'storylic_server_url'
+
+const DEFAULT_SERVER_URL = (import.meta.env.VITE_SERVER_URL as string) ?? ''
+
+const loadServerUrl = (): string => {
+  try {
+    return localStorage.getItem(SERVER_URL_KEY) || DEFAULT_SERVER_URL
+  } catch {
+    return DEFAULT_SERVER_URL
+  }
+}
 
 const saveSession = (token: string, gameId: string, playerName?: string) => {
   const existing = loadSession()
@@ -36,13 +47,16 @@ const loadSession = (): StoredSession | null => {
 
 const clearSession = () => sessionStorage.removeItem(SESSION_KEY)
 
+// Anexado só uma vez, mesmo que o socket seja reconstruído (troca de servidor).
+let connectivityWatchersAttached = false
+
 export const useSocketStore = defineStore('socket', () => {
   const storeGlobal = useGlobalStore()
   const storeSettings = useSettingStore()
   const storeCards = useCardsStore()
   const storeTimer = useTimerStore()
 
-  const serverUrl = ref(import.meta.env.VITE_SERVER_URL)
+  const serverUrl = ref(loadServerUrl())
   const socket = ref<Socket | null>(null)
   const gameId = ref('')
   const isConnected = ref(false)
@@ -50,6 +64,18 @@ export const useSocketStore = defineStore('socket', () => {
   const currentPlayerNumber = ref('')
   const mySocketId = ref('')
   const isReconnecting = ref(false)
+
+  // Fase de conexão — usada para a UX de cold start do Render ("acordando o
+  // servidor…") e para saber se a queda é de rede ou do servidor.
+  const connectAttempts = ref(0)
+  const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
+  const isDefaultServer = computed(() => serverUrl.value === DEFAULT_SERVER_URL)
+  const connectionPhase = computed<'online' | 'offline' | 'waking' | 'connecting'>(() => {
+    if (isConnected.value) return 'online'
+    if (!isOnline.value) return 'offline'
+    if (connectAttempts.value >= 2) return 'waking'
+    return 'connecting'
+  })
 
   const justJoined = ref(false)
   const pendingPlayerName = ref('')
@@ -81,13 +107,46 @@ export const useSocketStore = defineStore('socket', () => {
       emitSelectedCards()
     })
 
-    socket.value = io(serverUrl.value)
+    socket.value = io(serverUrl.value, {
+      // Cold start do tier free do Render pode demorar. Falha rápido cada
+      // tentativa e tenta de novo indefinidamente até o servidor "acordar".
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 800,
+      reconnectionDelayMax: 4000,
+      timeout: 8000,
+    })
+
+    // Ao voltar o foco/rede, força uma reconexão imediata em vez de esperar o
+    // backoff — crucial no mobile, onde a aba é congelada em segundo plano.
+    if (!connectivityWatchersAttached && typeof window !== 'undefined') {
+      connectivityWatchersAttached = true
+      window.addEventListener('online', () => {
+        isOnline.value = true
+        resyncConnection()
+      })
+      window.addEventListener('offline', () => {
+        isOnline.value = false
+      })
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          isOnline.value = typeof navigator === 'undefined' ? true : navigator.onLine
+          resyncConnection()
+        }
+      })
+    }
 
     /** Listeners */
+
+    // Cada tentativa falha incrementa o contador → alimenta a UX "acordando…".
+    socket.value.on('connect_error', () => {
+      connectAttempts.value += 1
+    })
 
     socket.value.on(SocketEvents.ON_CONNECT, () => {
       mySocketId.value = socket.value?.id ?? ''
       isConnected.value = true
+      connectAttempts.value = 0
 
       const session = loadSession()
       if (session) {
@@ -411,10 +470,32 @@ export const useSocketStore = defineStore('socket', () => {
   }
 
   const emitFinishStoryAndNext = () => {
-    socket.value?.emit(SocketEvents.EMIT_FINISH_STORYTELLING, {
-      gameId: gameId.value,
-      currentPlayer: mySocketId.value,
-    })
+    const targetGameId = gameId.value
+
+    const send = () =>
+      socket.value?.emit(SocketEvents.EMIT_FINISH_STORYTELLING, {
+        gameId: targetGameId,
+        currentPlayer: mySocketId.value,
+      })
+
+    send()
+
+    // Reenvio se o servidor não confirmar (um blip de Wi-Fi pode engolir o emit).
+    // Enquanto ainda formos o jogador da vez, tenta de novo até 3x. Assim que o
+    // servidor avança o turno, `currentPlayerNumber` muda e paramos.
+    let retries = 0
+    const retry = () => {
+      if (retries >= 3) return
+      if (currentPlayerNumber.value !== mySocketId.value) return
+      if (!socket.value?.connected) {
+        setTimeout(retry, 2000)
+        return
+      }
+      retries += 1
+      send()
+      setTimeout(retry, 2000)
+    }
+    setTimeout(retry, 2000)
   }
 
   const emitResetGame = () => {
@@ -457,11 +538,47 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value?.emit(SocketEvents.EMIT_REJOIN_GAME, { gameId: targetGameId, token })
   }
 
+  // Força reconexão imediata (foco/rede de volta). O handler de `connect` cuida
+  // do rejoin automático da sessão salva.
+  const resyncConnection = () => {
+    if (!socket.value) return
+    if (!socket.value.connected) socket.value.connect()
+  }
+
+  // Alterna o endereço do servidor em runtime (nuvem ↔ local/LAN) sem rebuild.
+  // Vazio volta ao padrão (VITE_SERVER_URL).
+  const setServerUrl = (url: string) => {
+    const clean = url.trim()
+    try {
+      if (clean && clean !== DEFAULT_SERVER_URL) localStorage.setItem(SERVER_URL_KEY, clean)
+      else localStorage.removeItem(SERVER_URL_KEY)
+    } catch {
+      /* localStorage indisponível — segue só em memória */
+    }
+
+    serverUrl.value = clean || DEFAULT_SERVER_URL
+
+    isConnected.value = false
+    connectAttempts.value = 0
+
+    if (socket.value) {
+      socket.value.removeAllListeners()
+      socket.value.disconnect()
+      socket.value = null
+    }
+
+    connectToServer()
+  }
+
   return {
     socket,
+    serverUrl,
     gameId,
     isConnected,
     isReconnecting,
+    isOnline,
+    isDefaultServer,
+    connectionPhase,
     room,
     activeSession,
     currentPlayerNumber,
@@ -472,6 +589,8 @@ export const useSocketStore = defineStore('socket', () => {
     connectToServer,
     navigate,
     triggerRejoin,
+    resyncConnection,
+    setServerUrl,
     emitJoinGame,
     emitConfigGame,
     emitStartGame,

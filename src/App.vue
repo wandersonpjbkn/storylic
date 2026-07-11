@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 
 import TheNotification from '@/components/TheNotification.vue'
@@ -15,6 +15,25 @@ const storeCards = useCardsStore()
 const storeTimer = useTimerStore()
 
 initNavigator(router)
+
+// Overlay de cold start (Render free) / rede caída. Só aparece depois de algumas
+// tentativas falhas, para não piscar numa conexão rápida.
+const connectionOverlay = computed(() => {
+  if (storeSocket.isReconnecting) return null
+  if (storeSocket.connectionPhase === 'offline') {
+    return {
+      title: 'Sem conexão de rede',
+      subtitle: 'Verifique o Wi-Fi ou os dados móveis. Reconectando sozinho…',
+    }
+  }
+  if (storeSocket.connectionPhase === 'waking') {
+    return {
+      title: 'Acordando o servidor…',
+      subtitle: 'No primeiro acesso o servidor gratuito pode levar até ~1 min para ligar.',
+    }
+  }
+  return null
+})
 
 onMounted(() => {
   storeSocket.connectToServer()
@@ -60,6 +79,31 @@ onUnmounted(() => {
         <p class="text-white text-lg font-bold">Reconectando...</p>
         <p style="color: rgba(255, 255, 255, 0.5)" class="text-sm">
           Verificando sua sessão anterior
+        </p>
+      </div>
+    </transition>
+  </Teleport>
+
+  <Teleport to="body">
+    <transition
+      enter-active-class="transition ease-out duration-200"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition ease-in duration-150"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div
+        v-if="connectionOverlay"
+        class="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 px-8 text-center"
+        style="background: rgba(30, 10, 60, 0.9); backdrop-filter: blur(10px)"
+      >
+        <div
+          class="w-12 h-12 border-4 border-white/20 border-t-pink-400 rounded-full animate-spin"
+        />
+        <p class="text-white text-lg font-bold">{{ connectionOverlay.title }}</p>
+        <p style="color: rgba(255, 255, 255, 0.55)" class="text-sm max-w-xs">
+          {{ connectionOverlay.subtitle }}
         </p>
       </div>
     </transition>
@@ -124,13 +168,23 @@ button {
 }
 
 .sl-root {
+  position: relative;
+  min-height: 100dvh;
+}
+
+/* Backdrop fixo via pseudo-elemento — evita o jank de `background-attachment:
+   fixed` no Safari mobile e cobre a área do notch / barra de URL. */
+.sl-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background: linear-gradient(
     135deg,
     var(--sl-bg-from) 0%,
     var(--sl-bg-via) 50%,
     var(--sl-bg-to) 100%
   );
-  background-attachment: fixed;
 }
 
 /* ── Superfície vidro ──────────────────────────────────────────────────── */

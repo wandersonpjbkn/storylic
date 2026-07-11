@@ -44,7 +44,7 @@ watch(notification, ({ message }) => {
   >
     <div
       v-if="notification.show"
-      class="fixed top-0 right-0 m-4 z-50 w-auto max-w-md"
+      class="fixed top-0 inset-x-0 z-50 mx-auto mt-3 w-[calc(100%-1.5rem)] max-w-md sm:right-0 sm:left-auto sm:mx-0 sm:mr-4 sm:w-auto"
       :style="duration"
     >
       <div
