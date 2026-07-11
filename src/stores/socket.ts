@@ -124,6 +124,7 @@ export const useSocketStore = defineStore('socket', () => {
       window.addEventListener('online', () => {
         isOnline.value = true
         resyncConnection()
+        storeTimer.syncFromDeadline()
       })
       window.addEventListener('offline', () => {
         isOnline.value = false
@@ -132,6 +133,8 @@ export const useSocketStore = defineStore('socket', () => {
         if (document.visibilityState === 'visible') {
           isOnline.value = typeof navigator === 'undefined' ? true : navigator.onLine
           resyncConnection()
+          // Recalcula o cronômetro: os ticks ficaram congelados em 2º plano.
+          storeTimer.syncFromDeadline()
         }
       })
     }
@@ -462,11 +465,29 @@ export const useSocketStore = defineStore('socket', () => {
   }
 
   const emitSelectedCards = () => {
-    socket.value?.emit(SocketEvents.EMIT_CARDS_SELECTED, {
-      gameId: gameId.value,
-      cards: storeCards.selectedCards,
-      playerNumber: mySocketId.value,
-    })
+    const targetGameId = gameId.value
+
+    const send = () =>
+      socket.value?.emit(SocketEvents.EMIT_CARDS_SELECTED, {
+        gameId: targetGameId,
+        cards: storeCards.selectedCards,
+        playerNumber: mySocketId.value,
+      })
+
+    send()
+
+    // A revelação da mão não tem confirmação; um blip de Wi-Fi pode engolir o
+    // emit e os outros jogadores ficariam sem ver as cartas. Reenvia enquanto
+    // ainda formos o jogador da vez (o servidor só aceita dele), até 2x.
+    let retries = 0
+    const retry = () => {
+      if (retries >= 2) return
+      if (currentPlayerNumber.value !== mySocketId.value) return
+      retries += 1
+      if (socket.value?.connected) send()
+      setTimeout(retry, 1800)
+    }
+    setTimeout(retry, 1800)
   }
 
   const emitFinishStoryAndNext = () => {

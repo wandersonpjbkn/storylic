@@ -11,6 +11,13 @@ export const useTimerStore = defineStore('timer', () => {
   const timerTurnInterval = ref<number | null>(null)
   const timerStoryInterval = ref<number | null>(null)
 
+  // Prazo absoluto (epoch ms) de cada fase. Contar a partir de um deadline —
+  // em vez de decrementar — deixa o cronômetro imune ao congelamento de
+  // setInterval quando a aba fica em segundo plano no mobile: ao voltar, o
+  // próximo tick recalcula o valor correto direto do relógio.
+  const turnDeadline = ref<number | null>(null)
+  const storyDeadline = ref<number | null>(null)
+
   const isTurnRunning = ref(false)
   const isStoryRunning = ref(false)
 
@@ -25,6 +32,7 @@ export const useTimerStore = defineStore('timer', () => {
 
   const stopTimerTurn = () => {
     isTurnRunning.value = false
+    turnDeadline.value = null
     if (timerTurnInterval.value) {
       clearInterval(timerTurnInterval.value)
       timerTurnInterval.value = null
@@ -33,6 +41,7 @@ export const useTimerStore = defineStore('timer', () => {
 
   const stopTimerStory = () => {
     isStoryRunning.value = false
+    storyDeadline.value = null
     if (timerStoryInterval.value) {
       clearInterval(timerStoryInterval.value)
       timerStoryInterval.value = null
@@ -46,27 +55,37 @@ export const useTimerStore = defineStore('timer', () => {
     timerStory.value = baseTimerStory.value
   }
 
+  const tickTurn = () => {
+    if (turnDeadline.value === null) return
+    const remaining = Math.max(0, Math.ceil((turnDeadline.value - Date.now()) / 1000))
+    timerTurn.value = remaining
+    if (remaining <= 0) {
+      stopTimerTurn()
+      _onTurnExpired?.() // game store decides what to do
+    }
+  }
+
+  const tickStory = () => {
+    if (storyDeadline.value === null) return
+    const remaining = Math.max(0, Math.ceil((storyDeadline.value - Date.now()) / 1000))
+    timerStory.value = remaining
+    if (remaining <= 0) stopTimerStory()
+  }
+
   const startTimerTurn = () => {
     isTurnRunning.value = true
-    timerTurnInterval.value = setInterval(() => {
-      if (timerTurn.value > 0) {
-        timerTurn.value -= 1
-      } else {
-        stopTimerTurn()
-        _onTurnExpired?.() // game store decides what to do
-      }
-    }, 1000)
+    // Deadline derivado do valor atual de timerTurn (respeita um restore prévio).
+    turnDeadline.value = Date.now() + timerTurn.value * 1000
+    if (timerTurnInterval.value) clearInterval(timerTurnInterval.value)
+    // 250ms: recupera rápido ao voltar do segundo plano, sem custo perceptível.
+    timerTurnInterval.value = setInterval(tickTurn, 250)
   }
 
   const startTimerStory = () => {
     isStoryRunning.value = true
-    timerStoryInterval.value = setInterval(() => {
-      if (timerStory.value > 0) {
-        timerStory.value -= 1
-      } else {
-        stopTimerStory()
-      }
-    }, 1000)
+    storyDeadline.value = Date.now() + timerStory.value * 1000
+    if (timerStoryInterval.value) clearInterval(timerStoryInterval.value)
+    timerStoryInterval.value = setInterval(tickStory, 250)
   }
 
   const restoreTimer = (remainingSeconds: number) => {
@@ -78,6 +97,14 @@ export const useTimerStore = defineStore('timer', () => {
     stopTimerStory()
     timerStory.value = Math.max(0, remainingSeconds)
     if (timerStory.value > 0) startTimerStory()
+  }
+
+  // Recalcula imediatamente os cronômetros em execução a partir do deadline.
+  // Chamado ao voltar o foco/rede, quando os ticks em segundo plano ficaram
+  // atrasados. Sem efeito se nada estiver rodando.
+  const syncFromDeadline = () => {
+    if (isTurnRunning.value) tickTurn()
+    if (isStoryRunning.value) tickStory()
   }
 
   return {
@@ -97,5 +124,6 @@ export const useTimerStore = defineStore('timer', () => {
     resetTimers,
     restoreTimer,
     restoreStoryTimer,
+    syncFromDeadline,
   }
 })
