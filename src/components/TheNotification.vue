@@ -46,6 +46,9 @@ watch(notification, ({ message }) => {
       v-if="notification.show"
       class="fixed top-0 inset-x-0 z-50 mx-auto mt-3 w-[calc(100%-1.5rem)] max-w-md sm:right-0 sm:left-auto sm:mx-0 sm:mr-4 sm:w-auto"
       :style="duration"
+      :role="notification.type === 'error' ? 'alert' : 'status'"
+      :aria-live="notification.type === 'error' ? 'assertive' : 'polite'"
+      aria-atomic="true"
     >
       <div
         :class="[
@@ -76,9 +79,11 @@ watch(notification, ({ message }) => {
             <p class="text-white/80 text-sm">{{ notification.message }}</p>
           </div>
 
-          <!-- Close Button -->
+          <!-- Close Button — área de toque ampliada (Fitts) via padding negativo -->
           <button
-            class="shrink-0 text-white/60 hover:text-white transition-colors"
+            type="button"
+            aria-label="Fechar notificação"
+            class="shrink-0 -m-2 p-2 text-white/60 hover:text-white transition-colors"
             @click="storeGlobal.closeNotification"
           >
             <BaseIcon name="times" class="w-5 h-5" />
@@ -86,7 +91,7 @@ watch(notification, ({ message }) => {
         </div>
 
         <!-- Progress Bar -->
-        <div class="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
+        <div class="mt-4 h-1 bg-white/10 rounded-full overflow-hidden" aria-hidden="true">
           <div
             :class="[
               'h-full rounded-full animate-progress',

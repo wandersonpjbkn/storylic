@@ -55,7 +55,8 @@ const avatarStyle = computed(() => {
 </script>
 
 <template>
-  <div v-bind="$attrs">
+  <!-- Decorativo: as iniciais duplicam o nome já exibido ao lado. -->
+  <div v-bind="$attrs" aria-hidden="true">
     <div
       class="flex w-full h-full rounded-full items-center justify-center font-semibold"
       :style="avatarStyle"

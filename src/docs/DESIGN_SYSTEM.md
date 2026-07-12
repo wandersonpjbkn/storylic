@@ -50,3 +50,18 @@ Definidos em `App.vue` (`:root`):
 Alvos de toque generosos (botões `py-4/py-5`), inputs `text-lg` (≥16px, evita zoom
 no iOS), `-webkit-tap-highlight-color: transparent`. A fluidez mobile é requisito
 de produto — ver [`UX_REVIEW`](UX_REVIEW.md).
+
+## Acessibilidade — fundação ✅
+
+Definidos globalmente em `App.vue` (ver [`UX_REVIEW`](UX_REVIEW.md) para o pass
+completo):
+
+- **Foco visível:** `--sl-focus` (#f9a8d4) + regra `:focus-visible` (anel de 3px).
+  Não usar `outline: none` sem substituto (WCAG 2.4.7).
+- **`prefers-reduced-motion`:** bloco global neutraliza animações/transições não
+  essenciais. Toda animação nova deve tolerar isso.
+- **`.sr-only`:** utilitário para texto só de leitor de tela (rótulos, anúncios).
+- **Contraste:** `--sl-text-3` = branco 70% (não 50%) para rótulos/hints passarem
+  em AA sobre o vidro. Texto que carrega informação deve mirar ≥4.5:1.
+- **Ícones:** `BaseIcon` sem `label` é `aria-hidden`; com `label`, `role="img"`.
+  Botão só-ícone sempre com `aria-label`.

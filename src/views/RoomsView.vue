@@ -124,6 +124,7 @@ onUnmounted(() => {
         v-model="search"
         type="text"
         placeholder="Buscar sala por nome..."
+        aria-label="Buscar sala por nome"
         class="w-full px-4 py-3 rounded-xl bg-white/10 text-white border border-white/20 focus:border-white/50 focus:outline-none placeholder-white/30 text-sm"
       />
     </div>

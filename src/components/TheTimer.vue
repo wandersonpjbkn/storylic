@@ -14,6 +14,15 @@ const phase = computed(() => {
   return 'critical'
 })
 
+// Anúncio para leitor de tela só nas trocas de fase (não a cada segundo, que
+// inundaria o usuário — WCAG 4.1.3). Depende só de `phase`, então muda ~2x/turno.
+const announcement = computed(() => {
+  const name = props.label ?? 'Tempo'
+  if (phase.value === 'critical') return `${name}: quase esgotado`
+  if (phase.value === 'warning') return `${name}: na metade`
+  return ''
+})
+
 const cfg = computed(
   () =>
     ({
@@ -59,7 +68,9 @@ const cfg = computed(
       {{ label }}
     </p>
 
-    <div class="flex items-baseline justify-center gap-1 mb-4">
+    <!-- O número muda a cada segundo: aria-hidden evita inundar o leitor de tela.
+         O anúncio de fase (abaixo) dá o essencial sem verborragia. -->
+    <div class="flex items-baseline justify-center gap-1 mb-4" aria-hidden="true">
       <span
         :class="[
           'font-black tabular-nums leading-none transition-all duration-300',
@@ -76,11 +87,17 @@ const cfg = computed(
     </div>
 
     <!-- Barra sólida — verde/laranja/vermelho sem gradiente -->
-    <div class="h-2 rounded-full overflow-hidden" style="background: rgba(255, 255, 255, 0.12)">
+    <div
+      class="h-2 rounded-full overflow-hidden"
+      style="background: rgba(255, 255, 255, 0.12)"
+      aria-hidden="true"
+    >
       <div
         class="h-full rounded-full transition-all duration-1000 ease-linear"
         :style="{ width: `${pct * 100}%`, background: cfg.barColor }"
       />
     </div>
+
+    <p class="sr-only" role="status" aria-live="polite">{{ announcement }}</p>
   </div>
 </template>

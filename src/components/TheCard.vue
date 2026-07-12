@@ -57,6 +57,8 @@ const onImgError = () => {
 <template>
   <button
     :disabled="disabled"
+    :aria-pressed="readonly ? undefined : selected"
+    :aria-label="`${m.label}: ${name}`"
     :class="[
       'relative select-none text-left transition-all duration-150 overflow-hidden flex flex-col',
       'rounded-2xl',

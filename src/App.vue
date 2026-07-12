@@ -54,9 +54,9 @@ onUnmounted(() => {
         env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
     "
   >
-    <div class="max-w-lg mx-auto px-4 pt-6 pb-10">
+    <main class="max-w-lg mx-auto px-4 pt-6 pb-10">
       <router-view />
-    </div>
+    </main>
   </div>
 
   <Teleport to="body">
@@ -72,9 +72,12 @@ onUnmounted(() => {
         v-if="storeSocket.isReconnecting"
         class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4"
         style="background: rgba(30, 10, 60, 0.88); backdrop-filter: blur(10px)"
+        role="status"
+        aria-live="polite"
       >
         <div
           class="w-12 h-12 border-4 border-white/20 border-t-pink-400 rounded-full animate-spin"
+          aria-hidden="true"
         />
         <p class="text-white text-lg font-bold">Reconectando...</p>
         <p style="color: rgba(255, 255, 255, 0.5)" class="text-sm">
@@ -97,9 +100,12 @@ onUnmounted(() => {
         v-if="connectionOverlay"
         class="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 px-8 text-center"
         style="background: rgba(30, 10, 60, 0.9); backdrop-filter: blur(10px)"
+        role="status"
+        aria-live="polite"
       >
         <div
           class="w-12 h-12 border-4 border-white/20 border-t-pink-400 rounded-full animate-spin"
+          aria-hidden="true"
         />
         <p class="text-white text-lg font-bold">{{ connectionOverlay.title }}</p>
         <p style="color: rgba(255, 255, 255, 0.55)" class="text-sm max-w-xs">
@@ -128,10 +134,15 @@ onUnmounted(() => {
   --sl-border: rgba(255, 255, 255, 0.18);
   --sl-border-soft: rgba(255, 255, 255, 0.1);
 
-  /* Texto — sempre legível sobre o gradiente escuro */
+  /* Texto — sempre legível sobre o gradiente escuro.
+     --sl-text-3 usa 0.7 (não 0.5) para os rótulos/hints passarem no contraste
+     WCAG AA sobre o vidro; abaixo disso o texto informativo falhava em AA. */
   --sl-text: #ffffff;
   --sl-text-2: rgba(255, 255, 255, 0.8);
-  --sl-text-3: rgba(255, 255, 255, 0.5);
+  --sl-text-3: rgba(255, 255, 255, 0.7);
+
+  /* Anel de foco visível (teclado) — rosa claro, legível sobre o gradiente. */
+  --sl-focus: #f9a8d4;
 
   /* Paleta de acento */
   --sl-pink: #ec4899;
@@ -165,6 +176,45 @@ button {
 }
 #app {
   position: relative;
+}
+
+/* ── Foco visível por teclado (WCAG 2.4.7) ─────────────────────────────────
+   O :active/hover dos botões não deixava rastro para quem navega por teclado. */
+:focus-visible {
+  outline: 3px solid var(--sl-focus);
+  outline-offset: 2px;
+}
+/* Some com o outline só para quem usa ponteiro (mantém para teclado). */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Conteúdo só para leitores de tela ─────────────────────────────────────
+   Visível para tecnologia assistiva, invisível na tela. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Respeitar prefers-reduced-motion (WCAG 2.3.3) ─────────────────────────
+   Neutraliza spinner, pulse, barra de progresso e transforms para quem pede
+   menos movimento. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .sl-root {

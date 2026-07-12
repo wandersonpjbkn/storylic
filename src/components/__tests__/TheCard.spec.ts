@@ -32,4 +32,18 @@ describe('TheCard', () => {
     await wrapper.trigger('click')
     expect(wrapper.emitted('click')).toBeUndefined()
   })
+
+  it('expõe estado de alternância e nome acessível (a11y)', () => {
+    const off = mountCard({ name: 'Dragão', category: 'animals', selected: false })
+    expect(off.find('button').attributes('aria-pressed')).toBe('false')
+    expect(off.find('button').attributes('aria-label')).toBe('Animal: Dragão')
+
+    const on = mountCard({ name: 'Dragão', category: 'animals', selected: true })
+    expect(on.find('button').attributes('aria-pressed')).toBe('true')
+  })
+
+  it('readonly não é um botão de alternância (sem aria-pressed)', () => {
+    const wrapper = mountCard({ name: 'Dragão', category: 'animals', readonly: true, selected: true })
+    expect(wrapper.find('button').attributes('aria-pressed')).toBeUndefined()
+  })
 })
