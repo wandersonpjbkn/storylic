@@ -3,6 +3,16 @@
 Histórico de mudanças concluídas. Os docs em `src/docs/` descrevem só o **estado
 atual**; o que **mudou** e por quê mora aqui.
 
+## 2026-07 — Suíte de segurança local
+
+- **`yarn security`** (rápido): auditoria de CVEs de deps de produção +
+  `eslint-plugin-security` no `yarn lint`.
+- **`yarn security:deep`** (`scripts/codeql-scan.sh`): CodeQL local — mesmo motor e
+  suite `security-extended` do check do GitHub. Sem CI.
+- **CVEs de dependência corrigidos via `resolutions`:** `ws`, `unhead`, `defu`,
+  `postcss`, `socket.io-parser` → auditoria de produção zerada. `ts`/`build`/`test`
+  (42) seguem verdes com as versões novas.
+
 ## 2026-07 — Acessibilidade, heurísticas e UX laws
 
 Pass de a11y mapeado a WCAG 2.2 AA (ver `src/docs/UX_REVIEW.md`):

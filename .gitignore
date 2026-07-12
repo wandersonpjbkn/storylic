@@ -73,3 +73,7 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.example.*
+
+# CodeQL local (yarn security:deep)
+.codeql-db/
+codeql.sarif

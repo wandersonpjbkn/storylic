@@ -46,8 +46,25 @@ revisão visual. **Não** testar: snapshot de copy, detalhes de pixel.
   pt-BR (bypass da regra de idioma, ver [`CONVENTIONS`](CONVENTIONS.md)).
 - Stores: `setActivePinia(createPinia())` no `beforeEach`. Timers: `vi.useFakeTimers`.
 
+## Segurança (local, sem CI) ✅
+
+Duas camadas que rodam via `yarn`, como os outros gates:
+
+- **`yarn security`** (rápida): auditoria de **CVEs de dependência de produção**
+  (`yarn audit --groups dependencies`, gate em ≥ moderate) + `yarn lint` com
+  **`eslint-plugin-security`** (`detect-object-injection` desligado por regra,
+  justificado — ruído em mapas de config).
+- **`yarn security:deep`** (`scripts/codeql-scan.sh`): **CodeQL** local — mesmo
+  motor e suite `security-extended` do check do GitHub. É o que faz dataflow
+  interprocedural que a camada rápida (AST) **não** pega.
+
+> CVEs de deps transitivas corrigidos via `resolutions` (`ws`, `unhead`, `defu`,
+> `postcss`, `socket.io-parser`) → auditoria de produção zerada.
+
 ## Pendente ⏳
 
 - **E2E (Playwright):** smoke de navegação (setup ↔ salas, validação de join)
   contra `vite preview` + API local. A lógica multi-jogador fica na integração da
   API. Ainda não escrito.
+- `security:deep` (CodeQL) roda na máquina do dev; o smoke completo não rodou no
+  ambiente da auditoria (proxy bloqueia o download do bundle — 403).

@@ -38,7 +38,13 @@
 ## Lint ✅
 
 `eslint` (flat config em `eslint.config.js`, ESM) + `eslint-plugin-vue` +
-`eslint-plugin-sonarjs` (regras `recommended`). Relaxamentos são **por regra e
-justificados** no config (ex.: `sonarjs/pseudo-random` para o shuffle de cartas,
-`sonarjs/no-clear-text-protocols` para o `http://` do modo LAN) — não silenciar em
-massa. `argsIgnorePattern: '^_'` para parâmetros intencionalmente não usados.
+`eslint-plugin-sonarjs` + **`eslint-plugin-security`** (regras `recommended`).
+Relaxamentos são **por regra e justificados** no config (ex.: `sonarjs/pseudo-random`
+para o shuffle, `sonarjs/no-clear-text-protocols` para o `http://` do modo LAN,
+`security/detect-object-injection` para acesso a mapas de config) — não silenciar
+em massa. `argsIgnorePattern: '^_'` para parâmetros intencionalmente não usados.
+
+## Segurança ✅
+
+Ver [`TESTING`](TESTING.md#segurança-local-sem-ci-): **`yarn security`** (deps +
+anti-padrões, rápido) e **`yarn security:deep`** (CodeQL local, profundo). Sem CI.
