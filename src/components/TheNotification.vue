@@ -6,9 +6,15 @@ import type { UIcons } from '@/types'
 
 const storeGlobal = useGlobalStore()
 
+const MAX_DURATION_STEP_MS = 60_000
+
 const notification = computed(() => storeGlobal.notification)
-const duration = computed(() => {
-  return `--duration: ${storeGlobal.notificationDuration}ms`
+// Whole-second class instead of an inline `--duration` custom property, so
+// the progress-bar animation stays CSP-safe under a strict `style-src`.
+const durationClass = computed(() => {
+  const clamped = Math.min(Math.max(storeGlobal.notificationDuration, 1000), MAX_DURATION_STEP_MS)
+  const roundedSeconds = Math.round(clamped / 1000)
+  return `sl-duration-${roundedSeconds * 1000}`
 })
 const icon = computed((): { name: UIcons; color: string } => {
   switch (notification.value.type) {
@@ -44,8 +50,10 @@ watch(notification, ({ message }) => {
   >
     <div
       v-if="notification.show"
-      class="fixed top-0 right-0 m-4 z-50 w-auto max-w-md"
-      :style="duration"
+      class="fixed top-0 inset-x-0 z-50 mx-auto mt-3 w-[calc(100%-1.5rem)] max-w-md sm:right-0 sm:left-auto sm:mx-0 sm:mr-4 sm:w-auto"
+      :role="notification.type === 'error' ? 'alert' : 'status'"
+      :aria-live="notification.type === 'error' ? 'assertive' : 'polite'"
+      aria-atomic="true"
     >
       <div
         :class="[
@@ -76,9 +84,11 @@ watch(notification, ({ message }) => {
             <p class="text-white/80 text-sm">{{ notification.message }}</p>
           </div>
 
-          <!-- Close Button -->
+          <!-- Close Button — enlarged tap area (Fitts) via negative padding -->
           <button
-            class="shrink-0 text-white/60 hover:text-white transition-colors"
+            type="button"
+            aria-label="Fechar notificação"
+            class="shrink-0 -m-2 p-2 text-white/60 hover:text-white transition-colors"
             @click="storeGlobal.closeNotification"
           >
             <BaseIcon name="times" class="w-5 h-5" />
@@ -86,10 +96,11 @@ watch(notification, ({ message }) => {
         </div>
 
         <!-- Progress Bar -->
-        <div class="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
+        <div class="mt-4 h-1 bg-white/10 rounded-full overflow-hidden" aria-hidden="true">
           <div
             :class="[
               'h-full rounded-full animate-progress',
+              durationClass,
               notification.type === 'success' ? 'bg-green-400' : '',
               notification.type === 'error' ? 'bg-red-400' : '',
               notification.type === 'warning' ? 'bg-yellow-400' : '',
@@ -113,6 +124,18 @@ watch(notification, ({ message }) => {
 }
 
 .animate-progress {
-  animation: progress var(--duration) linear forwards;
+  animation-name: progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+// One class per whole second up to the longest duration actually used
+// (RESERVATION_TTL_MS's default window) — picked by `durationClass` instead
+// of an inline `--duration` custom property, so this stays CSP-safe under a
+// strict `style-src`.
+@for $i from 1 through 60 {
+  .sl-duration-#{$i * 1000} {
+    animation-duration: #{$i}s;
+  }
 }
 </style>

@@ -13,6 +13,16 @@ export default defineConfig({
     vue(),
     tailwindcss(),
     vueDevTools(),
+    // svgo (via vite-svg-loader) strips the viewBox by default whenever it
+    // matches the SVG's width/height (the `removeViewBox` preset-default
+    // plugin). That breaks CSS/Tailwind resizing (BaseIcon used at sizes
+    // other than the file's native one) — content gets clipped instead of
+    // scaled. Always keep the viewBox.
+    svgLoader({
+      svgoConfig: {
+        plugins: [{ name: 'preset-default', params: { overrides: { removeViewBox: false } } }],
+      },
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
@@ -51,7 +61,6 @@ export default defineConfig({
         ],
       },
     }),
-    svgLoader(),
   ],
   resolve: {
     alias: {

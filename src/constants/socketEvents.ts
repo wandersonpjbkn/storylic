@@ -14,6 +14,7 @@ export enum SocketEvents {
 
   // on
   ON_CONNECT = 'connect',
+  ON_CONNECT_ERROR = 'connect_error',
   ON_DISCONNECT = 'disconnect',
   ON_JOIN_ACK = 'join-ack',
   ON_JOIN_ERROR = 'join-error',
@@ -29,11 +30,13 @@ export enum SocketEvents {
   ON_PLAYER_RECONNECTED = 'player-reconnected',
   ON_ROOMS_UPDATED = 'rooms-updated',
   ON_CONFIG_ERROR = 'config-error',
+  ON_KICKED = 'kicked',
 
   // emit
   EMIT_JOIN_GAME = 'join-game',
   EMIT_REJOIN_GAME = 'rejoin-game',
   EMIT_LEAVE_GAME = 'leave-game',
+  EMIT_KICK_PLAYER = 'kick-player',
   EMIT_START_GAME = 'start-game',
   EMIT_CONFIG_GAME = 'config-game',
   EMIT_RESET_GAME = 'reset-game',

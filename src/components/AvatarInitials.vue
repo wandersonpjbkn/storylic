@@ -5,6 +5,8 @@ const props = defineProps<{
   alt: string
 }>()
 
+const PALETTE_SIZE = 12
+
 // text
 const initialLetters = computed(() => {
   return props.alt
@@ -19,7 +21,9 @@ const normalizedAlt = computed(() => {
   return props.alt?.trim().toLowerCase() || ''
 })
 
-// color
+// color — deterministic hash into a fixed palette (not an arbitrary computed
+// hue) so the color never needs an inline `style`, keeping this CSP-safe
+// under a strict `style-src`.
 const hash = computed(() => {
   let hash = 0
 
@@ -31,36 +35,29 @@ const hash = computed(() => {
   return Math.abs(hash)
 })
 
-const hue = computed(() => hash.value % 360)
-const percent = (val: number) => `${val}%`
-
-// style
-const avatarStyle = computed(() => {
-  /**
-   * HSL
-   * @number hue: 0 -> 360
-   * @number saturation: 0 -> 100
-   * @number lightness: 0 -> 100
-   */
-  const base = `hsl(${hue.value} ${percent(60)} ${percent(45)})`
-  const lighten = `hsl(${hue.value} ${percent(60)} ${percent(65)})`
-  const darken = `hsl(${hue.value} ${percent(60)} ${percent(35)})`
-
-  return {
-    backgroundColor: base, // fallback
-    backgroundImage: `linear-gradient(135deg,${lighten},${darken})`, // style
-    color: '#fff',
-  }
-})
+const colorClass = computed(() => `sl-avatar-color-${hash.value % PALETTE_SIZE}`)
 </script>
 
 <template>
-  <div v-bind="$attrs">
+  <!-- Decorative: the initials duplicate the name already shown alongside. -->
+  <div v-bind="$attrs" aria-hidden="true">
     <div
-      class="flex w-full h-full rounded-full items-center justify-center font-semibold"
-      :style="avatarStyle"
+      :class="colorClass"
+      class="flex w-full h-full rounded-full items-center justify-center font-semibold text-white"
     >
       {{ initialLetters }}
     </div>
   </div>
 </template>
+
+<style lang="scss" scoped>
+// 12 palette entries evenly spaced around the hue wheel, same
+// hue/saturation/lightness formula the previous continuous-hash version used.
+@for $i from 0 through 11 {
+  .sl-avatar-color-#{$i} {
+    $hue: $i * 30;
+    background-color: hsl($hue 60% 45%);
+    background-image: linear-gradient(135deg, hsl($hue 60% 65%), hsl($hue 60% 35%));
+  }
+}
+</style>

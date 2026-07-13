@@ -31,7 +31,7 @@ const finishTurn = () => {
 
 <template>
   <div class="flex flex-col gap-4 pb-4">
-    <!-- Cabeçalho: jogador + turno -->
+    <!-- Header: player + turn -->
     <div class="flex items-center justify-between">
       <div>
         <p class="sl-label">Jogador</p>
@@ -41,7 +41,7 @@ const finishTurn = () => {
         <p class="sl-label">Turno</p>
         <p class="text-white font-bold text-lg leading-snug">
           {{ storeSettings.turnCurrent
-          }}<span style="color: rgba(255, 255, 255, 0.4)">/{{ storeSettings.turnMax }}</span>
+          }}<span class="text-white/40">/{{ storeSettings.turnMax }}</span>
         </p>
       </div>
     </div>
@@ -49,13 +49,11 @@ const finishTurn = () => {
     <!-- Timer -->
     <TheTimer :value="timerTurn" :base="storeTimer.baseTimerTurn" label="Tempo para montar a mão" />
 
-    <!-- Baralho disponível -->
+    <!-- Available deck -->
     <div>
       <div class="flex items-center justify-between mb-3">
         <p class="sl-label">Baralho</p>
-        <p class="text-xs font-semibold" style="color: rgba(255, 255, 255, 0.35)">
-          toque para selecionar
-        </p>
+        <p class="text-xs font-semibold text-white/[0.35]">toque para selecionar</p>
       </div>
 
       <div class="grid grid-cols-3 gap-3">
@@ -71,7 +69,7 @@ const finishTurn = () => {
       </div>
     </div>
 
-    <!-- Botão shuffle -->
+    <!-- Shuffle button -->
     <button
       class="sl-btn-ghost w-full py-3 flex items-center justify-center gap-2"
       @click="storeCards.shuffleDisplayedCards"
@@ -80,48 +78,34 @@ const finishTurn = () => {
       <span class="text-sm">Shuffle</span>
     </button>
 
-    <!-- Divisor minha mão -->
-    <div class="relative h-px mt-2" style="background: rgba(255, 255, 255, 0.1)">
+    <!-- "My hand" divider -->
+    <div class="relative h-px mt-2 bg-white/10">
       <span
-        class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-bold lowercase tracking-wider px-3 py-1 rounded-full"
-        style="
-          background: linear-gradient(135deg, #3b0764, #500724);
-          color: rgba(255, 255, 255, 0.45);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          white-space: nowrap;
-        "
+        class="sl-hand-divider__label absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-bold lowercase tracking-wider px-3 py-1 rounded-full whitespace-nowrap"
         >Minha mão</span
       >
     </div>
 
-    <!-- Slots visuais -->
+    <!-- Visual slots -->
     <div class="flex items-center justify-between">
       <div class="flex gap-2">
         <div
           v-for="i in 3"
           :key="i"
+          :class="i <= storeCards.selectedCards.length ? 'sl-slot-dot--filled' : 'sl-slot-dot--empty'"
           class="h-1.5 rounded-full transition-all duration-300"
-          :style="{
-            width: i <= storeCards.selectedCards.length ? '36px' : '24px',
-            background:
-              i <= storeCards.selectedCards.length
-                ? 'linear-gradient(90deg,#a855f7,#ec4899)'
-                : 'rgba(255,255,255,0.12)',
-          }"
         />
       </div>
       <span
+        :class="storeCards.selectedCards.length === 3 ? 'sl-slot-count--full' : 'sl-slot-count'"
         class="text-xs font-bold"
-        :style="{
-          color: storeCards.selectedCards.length === 3 ? '#c4b5fd' : 'rgba(255,255,255,.35)',
-        }"
       >
         {{ storeCards.selectedCards.length }}/3
         {{ slotsLeft > 0 ? `· ainda cabe ${slotsLeft}` : '· mão cheia' }}
       </span>
     </div>
 
-    <!-- Mão selecionada — TransitionGroup É o único flex container, sem div extra -->
+    <!-- Selected hand — TransitionGroup IS the only flex container, no extra div -->
     <div class="overflow-x-auto scrollbar-hide min-h-[100px]">
       <TransitionGroup name="hand" tag="div" class="flex gap-3 p-3">
         <TheCard
@@ -134,19 +118,18 @@ const finishTurn = () => {
           @click="storeCards.toggleCardSelection(card)"
         />
 
-        <!-- Slots vazios — dentro do mesmo TransitionGroup tag div -->
+        <!-- Empty slots — inside the same TransitionGroup tag div -->
         <div
           v-for="i in slotsLeft"
           :key="`empty-${i}`"
-          class="flex-shrink-0 rounded-xl border-2 border-dashed flex items-center justify-center"
-          style="min-width: 80px; aspect-ratio: 2/3; border-color: rgba(255, 255, 255, 0.1)"
+          class="flex-shrink-0 rounded-xl border-2 border-dashed border-white/10 flex items-center justify-center min-w-[80px] aspect-[2/3]"
         >
-          <span style="color: rgba(255, 255, 255, 0.15); font-size: 18px">+</span>
+          <span class="text-white/[0.15] text-[18px]">+</span>
         </div>
       </TransitionGroup>
     </div>
 
-    <!-- Botão confirmar -->
+    <!-- Confirm button -->
     <button :disabled="!storeCards.canConfirm" class="sl-btn py-4 text-base" @click="finishTurn">
       {{
         storeCards.canConfirm
@@ -158,6 +141,30 @@ const finishTurn = () => {
 </template>
 
 <style scoped>
+.sl-hand-divider__label {
+  background: linear-gradient(135deg, #3b0764, #500724);
+  color: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sl-slot-dot--filled {
+  width: 36px;
+  background: linear-gradient(90deg, #a855f7, #ec4899);
+}
+
+.sl-slot-dot--empty {
+  width: 24px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.sl-slot-count {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.sl-slot-count--full {
+  color: #c4b5fd;
+}
+
 .hand-enter-active {
   transition: all 0.2s ease-out;
 }

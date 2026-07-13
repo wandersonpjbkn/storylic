@@ -1,45 +1,72 @@
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import TheRoomRules from '@/components/TheRoomRules.vue'
+import ServerSwitcher from '@/components/ServerSwitcher.vue'
+import BaseConfirmModal from '@/components/BaseConfirmModal.vue'
+import ConnectionStatus from '@/components/ConnectionStatus.vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSettingStore } from '@/stores/settings'
 import { useSeo } from '@/composables/useSeo'
-import { SocketEvents } from '@/constants/socketEvents'
 
 const router = useRouter()
+const route = useRoute()
 const storeSocket = useSocketStore()
 const storeSettings = useSettingStore()
 
+// Invite link (/join/:gameId): joins straight into the linked room, no
+// option to pick another — only the name field is left to fill in.
+const isInviteMode = computed(() => !!route.params.gameId)
+
+// Error prevention/identification (WCAG 3.3.1): submitting empty marks the
+// field invalid and moves focus to it, instead of just failing silently.
+const invalidField = ref<'room' | 'name' | null>(null)
+const clearInvalid = () => {
+  invalidField.value = null
+}
+const onRoomIdInput = (e: Event) => {
+  storeSocket.gameId = (e.target as HTMLInputElement).value.toLowerCase().trim()
+  clearInvalid()
+}
+const submitJoin = () => {
+  invalidField.value = null
+  if (!storeSocket.gameId) invalidField.value = 'room'
+  else if (!storeSettings.playerName) invalidField.value = 'name'
+
+  if (invalidField.value) {
+    const id = invalidField.value === 'room' ? 'room-id' : 'player-name'
+    document.getElementById(id)?.focus()
+    return
+  }
+  storeSocket.emitJoinGame()
+}
+
 useSeo({ title: 'Home', description: 'Crie histórias incríveis com cartas aleatórias!' })
 
-const sessionPlayerName = computed(() => {
-  try {
-    const raw = sessionStorage.getItem(SocketEvents.STORAGE_KEY)
-    if (raw) {
-      const session = JSON.parse(raw)
-      if (session.playerName) return session.playerName
-    }
-  } catch {
-    /* noop */
-  }
-  return storeSocket.myPlayerName ?? ''
-})
+const sessionPlayerName = computed(
+  () => storeSocket.activeSession?.playerName || storeSocket.myPlayerName || '',
+)
 
 const returnToRoom = () => {
   if (!storeSocket.activeSession) return
   storeSocket.triggerRejoin(storeSocket.activeSession.gameId, storeSocket.activeSession.token)
 }
 
+const showAbandonConfirm = ref(false)
+
 const abandonRoom = () => {
   storeSocket.emitLeaveGame()
+  showAbandonConfirm.value = false
 }
 
 const goToRooms = () => router.push({ name: 'rooms-view' })
 
 onMounted(() => {
+  if (isInviteMode.value && !storeSocket.activeSession) {
+    storeSocket.gameId = String(route.params.gameId).toLowerCase().trim()
+  }
   if (!storeSocket.activeSession && storeSocket.gameId) {
     const input = document.getElementById('player-name') as HTMLInputElement | null
     input?.focus()
@@ -80,22 +107,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="mb-6 flex items-center justify-center gap-2">
-      <div
-        :class="[
-          'w-2.5 h-2.5 rounded-full',
-          storeSocket.isConnected ? 'bg-emerald-400' : 'bg-red-400 animate-pulse',
-        ]"
-      />
-      <span
-        :class="[
-          'text-sm font-medium',
-          storeSocket.isConnected ? 'text-emerald-300' : 'text-red-300',
-        ]"
-      >
-        {{ storeSocket.isConnected ? 'Servidor conectado' : 'Sem conexão com o servidor' }}
-      </span>
-    </div>
+    <ConnectionStatus class="mb-6" />
 
     <button
       :disabled="!storeSocket.isConnected"
@@ -113,16 +125,27 @@ onMounted(() => {
     <button
       type="button"
       class="w-full py-3 rounded-xl text-white/50 hover:text-white text-sm font-medium transition-colors hover:bg-white/5"
-      @click="abandonRoom"
+      @click="showAbandonConfirm = true"
     >
       Sair da sala e ver outras
     </button>
   </form>
 
+  <BaseConfirmModal
+    v-if="showAbandonConfirm"
+    title="Sair desta sala?"
+    description="Você não poderá mais voltar para esta sala depois de sair. Se caiu por engano, feche esta janela e volte em vez de sair."
+    confirm-label="Sim, sair"
+    cancel-label="Voltar"
+    danger
+    @confirm="abandonRoom"
+    @cancel="showAbandonConfirm = false"
+  />
+
   <form
     v-else
     class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20"
-    @submit.prevent="storeSocket.emitJoinGame"
+    @submit.prevent="submitJoin"
   >
     <div class="flex justify-center items-center gap-3 mb-2">
       <BaseIcon name="favicon" class="w-16 h-16" />
@@ -132,32 +155,18 @@ onMounted(() => {
       Prepare a sua mão e comece a criar mundos incríveis!
     </p>
 
-    <div class="mb-6 flex flex-col items-center gap-1">
-      <div class="flex items-center gap-2">
-        <div
-          :class="[
-            'w-2.5 h-2.5 rounded-full transition-colors',
-            storeSocket.isConnected ? 'bg-emerald-400' : 'bg-red-400 animate-pulse',
-          ]"
-        />
-        <span
-          :class="[
-            'text-sm font-medium',
-            storeSocket.isConnected ? 'text-emerald-300' : 'text-red-300',
-          ]"
-        >
-          {{ storeSocket.isConnected ? 'Servidor conectado' : 'Sem conexão com o servidor' }}
-        </span>
-      </div>
-      <p v-if="!storeSocket.isConnected" class="text-white/40 text-xs">
-        Verifique se o servidor está no ar antes de jogar
-      </p>
-    </div>
+    <ConnectionStatus class="mb-6" hint />
 
-    <div class="mb-5">
+    <div v-if="isInviteMode" class="mb-5 text-center">
+      <p class="text-white/60 text-sm">Você foi convidado para a sala</p>
+      <p class="text-pink-300 font-bold text-lg">{{ storeSocket.gameId }}</p>
+    </div>
+    <div v-else class="mb-5">
       <label for="room-id" class="block text-white font-semibold mb-2 text-sm">
         ID da Sala
-        <span class="text-white/50 font-normal ml-1">(escolha um nome único para sua sala)</span>
+        <span id="room-id-hint" class="text-white/70 font-normal ml-1"
+          >(escolha um nome único para sua sala)</span
+        >
       </label>
       <input
         id="room-id"
@@ -169,8 +178,10 @@ onMounted(() => {
         autocorrect="off"
         spellcheck="false"
         inputmode="text"
+        aria-describedby="room-id-hint"
+        :aria-invalid="invalidField === 'room'"
         class="w-full px-4 py-3 rounded-xl bg-white/15 text-white text-lg text-center border-2 border-white/20 focus:border-white/60 focus:outline-none placeholder-white/30 transition-colors lowercase"
-        @input="storeSocket.gameId = ($event.target as HTMLInputElement).value.toLowerCase().trim()"
+        @input="onRoomIdInput"
       />
     </div>
 
@@ -186,7 +197,9 @@ onMounted(() => {
         maxlength="24"
         autocomplete="nickname"
         inputmode="text"
+        :aria-invalid="invalidField === 'name'"
         class="w-full px-4 py-3 rounded-xl bg-white/15 text-white text-lg text-center border-2 border-white/20 focus:border-white/60 focus:outline-none placeholder-white/30 transition-colors"
+        @input="clearInvalid"
       />
     </div>
 
@@ -206,11 +219,14 @@ onMounted(() => {
     </button>
 
     <button
+      v-if="!isInviteMode"
       type="button"
       class="w-full py-3 rounded-xl text-white/60 hover:text-white text-sm font-medium transition-colors hover:bg-white/5"
       @click="goToRooms"
     >
       🔍 Ver salas ativas
     </button>
+
+    <ServerSwitcher v-if="!isInviteMode" class="mt-4" />
   </form>
 </template>

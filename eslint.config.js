@@ -1,6 +1,8 @@
 import { globalIgnores } from 'eslint/config'
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
 import pluginVue from 'eslint-plugin-vue'
+import sonarjs, { configs as sonarjsConfigs } from 'eslint-plugin-sonarjs'
+import security from 'eslint-plugin-security'
 import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
@@ -29,7 +31,21 @@ export default defineConfigWithVueTs(
 
   {
     name: 'app/rules',
+    plugins: { sonarjs, security },
     rules: {
+      ...sonarjsConfigs.recommended.rules,
+      ...security.configs.recommended.rules,
+
+      // eslint-plugin-security — ruído em qualquer acesso `obj[key]` (ex.: mapas
+      // de categoria em TheCard). Desligado por regra, com justificativa.
+      'security/detect-object-injection': 'off',
+
+      // SonarJS — relaxamentos justificados (não silenciar em massa):
+      // o shuffle das cartas não é contexto de segurança (não precisa de CSPRNG).
+      'sonarjs/pseudo-random': 'off',
+      // o modo LAN (feature) conecta em http://IP na rede local, que não tem https.
+      'sonarjs/no-clear-text-protocols': 'off',
+
       // Vue specific rules
       'vue/multi-word-component-names': 'off',
       'vue/no-v-html': 'off',

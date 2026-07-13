@@ -12,6 +12,7 @@ import BaseSlider from '@/components/BaseSlider.vue'
 
 // composables
 import router from './router'
+import { isLanMode } from '@/stores/socket'
 
 // styles
 import '@/assets/css/style.css'
@@ -32,7 +33,8 @@ app.use(VueGtm, {
   id: import.meta.env.VITE_GTM_ID,
   defer: false,
   compatibility: false,
-  enabled: import.meta.env.PROD,
+  // LAN mode's strict CSP has no allowance for GTM's external script origin.
+  enabled: import.meta.env.PROD && !isLanMode(),
   loadScript: true,
   vueRouter: router,
   trackOnNextTick: false,

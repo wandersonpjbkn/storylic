@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { useSettingStore } from '@/stores/settings'
+import { useSocketStore } from '@/stores/socket'
 import { GAME_ROUTES, PUBLIC_ROUTES } from '@/composables/useNavigator'
 import { SocketEvents } from '@/constants/socketEvents'
 
@@ -18,6 +19,13 @@ const router = createRouter({
     {
       name: 'setup-view',
       path: '/setup',
+      component: SetupView,
+    },
+    {
+      // Invite link: goes straight to the name screen, no room list and no
+      // manual ID field — whoever clicks it only ever joins the invited room.
+      name: 'join-view',
+      path: '/join/:gameId',
       component: SetupView,
     },
     {
@@ -67,10 +75,9 @@ const GAME_ONLY_ROUTES = Object.values(GAME_ROUTES).filter((name) => !PUBLIC_ROU
 router.beforeEach((to) => {
   if (!GAME_ONLY_ROUTES.includes(to.name as string)) return true
 
-  const hasSession = !!sessionStorage.getItem(SocketEvents.STORAGE_KEY)
-  if (hasSession) return true
-
   try {
+    if (useSocketStore().activeSession) return true
+
     const storeSettings = useSettingStore()
     const currentState = storeSettings.gameState as string
 

@@ -1,52 +1,20 @@
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
+
+import RoomConfigSliders from '@/components/RoomConfigSliders.vue'
 
 import { useSocketStore } from '@/stores/socket'
-import { useSettingStore } from '@/stores/settings'
-import { useTimerStore } from '@/stores/timer'
+import { useRoomConfigForm } from '@/composables/useRoomConfigForm'
 import { useSeo } from '@/composables/useSeo'
 import { SocketEvents } from '@/constants/socketEvents'
 
 const storeSocket = useSocketStore()
-const storeSettings = useSettingStore()
-const storeTimer = useTimerStore()
 
 useSeo({ title: 'Configurar sala', description: 'Defina as regras da partida' })
 
-// Valores locais — só persistem ao confirmar
-const timerTurn = ref(storeTimer.baseTimerTurn)
-const timerStory = ref(storeTimer.baseTimerStory)
-const turns = ref(storeSettings.turnMax)
-
-const hasChanges = computed(() => {
-  return (
-    timerTurn.value !== storeTimer.baseTimerTurn ||
-    timerStory.value !== storeTimer.baseTimerStory ||
-    turns.value !== storeSettings.turnMax
-  )
-})
-
-const confirm = () => {
-  // Persiste localmente
-  storeTimer.baseTimerTurn = timerTurn.value
-  storeTimer.baseTimerStory = timerStory.value
-  storeSettings.turnMax = turns.value
-
-  // Envia para o backend — todos na sala receberão room-config
-  storeSocket.emitConfigGame({
-    timerTurn: timerTurn.value,
-    timerStory: timerStory.value,
-    turns: turns.value,
-  })
-
-  storeSocket.navigate(SocketEvents.STATE_LOBBY)
-}
-
-const reset = () => {
-  timerTurn.value = storeTimer.baseTimerTurn
-  timerStory.value = storeTimer.baseTimerStory
-  turns.value = storeSettings.turnMax
-}
+const { timerTurn, timerStory, turns, hasChanges, save, reset } = useRoomConfigForm(() =>
+  storeSocket.navigate(SocketEvents.STATE_LOBBY),
+)
 
 onMounted(() => {
   document.getElementById('config-btn')?.focus()
@@ -59,68 +27,37 @@ onMounted(() => {
     <div>
       <p class="sl-label mb-1">Nova sala</p>
       <h1 class="text-white font-black text-2xl leading-tight">Configurar partida</h1>
-      <p class="text-sm mt-1" style="color: rgba(255, 255, 255, 0.45)">
-        Sala <span style="color: #fdba74; font-weight: 700">{{ storeSocket.gameId }}</span>
+      <p class="text-sm mt-1 text-white/45">
+        Sala <span class="text-orange-300 font-bold">{{ storeSocket.gameId }}</span>
         · só você vê esta tela
       </p>
     </div>
 
-    <!-- Configurações -->
+    <!-- Settings -->
     <div class="flex flex-col gap-3">
-      <!-- Tempo de escolha dos cards -->
-      <BaseSlider
-        v-model="timerTurn"
-        title="Tempo para escolher cards"
-        description="Quanto tempo cada jogador tem para montar a mão"
-        :min="10"
-        :max="60"
-        :step="5"
-      />
-
-      <!-- Tempo de narração -->
-      <BaseSlider
-        v-model="timerStory"
-        title="Tempo para narrar"
-        description="Quanto tempo cada jogador tem para contar seu trecho"
-        :min="20"
-        :max="120"
-        :step="5"
-      />
-
-      <!-- Número de turnos -->
-      <BaseSlider
-        v-model="turns"
-        title="Número de turnos"
-        description="Quantas rodadas a história terá ao todo"
-        :min="1"
-        :max="10"
-        :step="1"
-      />
+      <RoomConfigSliders v-model:timer-turn="timerTurn" v-model:timer-story="timerStory" v-model:turns="turns" />
     </div>
 
-    <!-- Resumo visual -->
-    <div
-      class="rounded-2xl px-5 py-4 flex items-center justify-around gap-4"
-      style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1)"
-    >
+    <!-- Visual summary -->
+    <div class="rounded-2xl px-5 py-4 flex items-center justify-around gap-4 bg-white/[0.06] border border-white/10">
       <div class="text-center">
         <p class="sl-label mb-1">Cards</p>
         <p class="font-black text-white text-xl">{{ timerTurn }}s</p>
       </div>
-      <div style="width: 1px; height: 32px; background: rgba(255, 255, 255, 0.12)" />
+      <div class="w-px h-8 bg-white/[0.12]" />
       <div class="text-center">
         <p class="sl-label mb-1">Narração</p>
         <p class="font-black text-white text-xl">{{ timerStory }}s</p>
       </div>
-      <div style="width: 1px; height: 32px; background: rgba(255, 255, 255, 0.12)" />
+      <div class="w-px h-8 bg-white/[0.12]" />
       <div class="text-center">
         <p class="sl-label mb-1">Turnos</p>
         <p class="font-black text-white text-xl">{{ turns }}</p>
       </div>
     </div>
 
-    <!-- Confirmar -->
-    <button id="config-btn" class="sl-btn py-5 text-lg" @click="confirm">
+    <!-- Confirm -->
+    <button id="config-btn" class="sl-btn py-5 text-lg" @click="save">
       Confirmar e ir para o lobby
     </button>
 
@@ -133,42 +70,8 @@ onMounted(() => {
       <span class="text-lg">Resetar</span>
     </button>
 
-    <p class="text-xs text-center" style="color: rgba(255, 255, 255, 0.3)">
+    <p class="text-xs text-center text-white/30">
       Outros jogadores verão estas configurações ao entrar
     </p>
   </div>
 </template>
-
-<style scoped>
-.sl-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 6px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.12);
-  outline: none;
-  cursor: pointer;
-}
-
-.sl-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ec4899, #a855f7);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.5);
-  border: 2px solid rgba(255, 255, 255, 0.8);
-}
-
-.sl-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ec4899, #a855f7);
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.5);
-  border: 2px solid rgba(255, 255, 255, 0.8);
-}
-</style>
