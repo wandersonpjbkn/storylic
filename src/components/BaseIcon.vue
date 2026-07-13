@@ -7,7 +7,7 @@ defineOptions({ inheritAttrs: false })
 
 const props = defineProps<{
   name: UIcons
-  /** Se definido, o ícone é conteúdo (lido por leitores de tela). Sem ele, é decorativo. */
+  /** If set, the icon is content (read by screen readers). Without it, it's decorative. */
   label?: string
 }>()
 
@@ -16,7 +16,7 @@ const dynamicIcon = computed(() => {
   return defineAsyncComponent(() => import(`@/assets/icons/${props.name}.svg`))
 })
 
-// Ícone com `label` vira role="img" + nome; sem label é decorativo (aria-hidden).
+// Icon with `label` becomes role="img" + name; without a label it's decorative (aria-hidden).
 const a11yAttrs = computed(() =>
   props.label
     ? { role: 'img', 'aria-label': props.label }

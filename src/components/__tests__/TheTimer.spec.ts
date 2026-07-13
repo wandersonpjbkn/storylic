@@ -22,7 +22,7 @@ describe('TheTimer', () => {
 
   it('a barra reflete a proporção restante', () => {
     const wrapper = mount(TheTimer, { props: { value: 10, base: 20 } })
-    // 10/20 → 50%
-    expect(wrapper.html()).toContain('width: 50%')
+    // 10/20 → 50% — an SVG attribute, not an inline `style`, per the CSP-safe design
+    expect(wrapper.find('.sl-timer__bar-fill').attributes('width')).toBe('50')
   })
 })

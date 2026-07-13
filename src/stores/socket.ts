@@ -9,7 +9,7 @@ import { useTimerStore } from '@/stores/timer'
 
 import { navigateTo } from '@/composables/useNavigator'
 import { SocketEvents } from '@/constants/socketEvents'
-import type { Card, GameState, Player, StoredSession } from '@/types'
+import type { Card, GameState, Player, RoomSnapshot, StoredSession } from '@/types'
 
 const SESSION_KEY = SocketEvents.STORAGE_KEY
 const SERVER_URL_KEY = 'storylic_server_url'
@@ -21,6 +21,25 @@ const loadServerUrl = (): string => {
     return localStorage.getItem(SERVER_URL_KEY) || DEFAULT_SERVER_URL
   } catch {
     return DEFAULT_SERVER_URL
+  }
+}
+
+// True either when the player manually switched away from the default server
+// (same signal `isDefaultServer` uses — a cloud-hosted page pointed at a LAN
+// IP via ServerSwitcher) OR when this build's own default server shares an
+// origin with the page itself (the `PUBLIC_DIR` deployment: storylic-api
+// serves the frontend from the same origin it listens on, so no runtime
+// switch ever happens — the LAN URL is already the baked-in default).
+// Exposed standalone for callers that run before the store exists (e.g.
+// `main.ts` deciding whether to load GTM, which the LAN build's strict CSP
+// would otherwise block with a console error).
+export const isLanMode = (): boolean => {
+  if (loadServerUrl() !== DEFAULT_SERVER_URL) return true
+
+  try {
+    return new URL(DEFAULT_SERVER_URL).origin === window.location.origin
+  } catch {
+    return false
   }
 }
 
@@ -47,7 +66,7 @@ const loadSession = (): StoredSession | null => {
 
 const clearSession = () => sessionStorage.removeItem(SESSION_KEY)
 
-// Anexado só uma vez, mesmo que o socket seja reconstruído (troca de servidor).
+// Attached only once, even if the socket is rebuilt (server switch).
 let connectivityWatchersAttached = false
 
 export const useSocketStore = defineStore('socket', () => {
@@ -64,36 +83,42 @@ export const useSocketStore = defineStore('socket', () => {
   const currentPlayerNumber = ref('')
   const mySocketId = ref('')
   const isReconnecting = ref(false)
+  // Room owner (whoever created it) — comes from the server via
+  // `join-ack`/`rejoin-ack` and never changes on reconnect or "play again"
+  // (see `Game.owner` in the API).
+  const isOwner = ref(false)
 
-  // Fase de conexão — usada para a UX de cold start do Render ("acordando o
-  // servidor…") e para saber se a queda é de rede ou do servidor.
+  // Connection phase — drives the cold-start UX for Render ("waking the
+  // server up…") and tells apart a network drop from a server outage.
   const connectAttempts = ref(0)
+  // Render's cold start usually resolves within ~1min. Past that point (~13
+  // attempts, given the 800ms→4s backoff), a persistent error (server down,
+  // misconfigured CORS) is more likely than a cold start — the UX stops
+  // pretending it'll wake up any second and offers a way out.
+  const STUCK_THRESHOLD = 13
   const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
   const isDefaultServer = computed(() => serverUrl.value === DEFAULT_SERVER_URL)
-  const connectionPhase = computed<'online' | 'offline' | 'waking' | 'connecting'>(() => {
-    if (isConnected.value) return 'online'
-    if (!isOnline.value) return 'offline'
-    if (connectAttempts.value >= 2) return 'waking'
-    return 'connecting'
-  })
+  const connectionPhase = computed<'online' | 'offline' | 'waking' | 'connecting' | 'stuck'>(
+    () => {
+      if (isConnected.value) return 'online'
+      if (!isOnline.value) return 'offline'
+      if (connectAttempts.value >= STUCK_THRESHOLD) return 'stuck'
+      if (connectAttempts.value >= 2) return 'waking'
+      return 'connecting'
+    },
+  )
 
   const justJoined = ref(false)
   const pendingPlayerName = ref('')
   const selectedCards = ref<Card[]>([])
+  const rooms = ref<RoomSnapshot[]>([])
 
   const navigate = (state: GameState) => {
     storeSettings.gameState = state
     navigateTo(state)
   }
 
-  const activeSession = computed<{ gameId: string; token: string } | null>(() => {
-    try {
-      const raw = sessionStorage.getItem(SocketEvents.STORAGE_KEY)
-      return raw ? JSON.parse(raw) : null
-    } catch {
-      return null
-    }
-  })
+  const activeSession = computed<StoredSession | null>(() => loadSession())
   const myPlayerNumber = computed(() => mySocketId.value)
   const myPlayerName = computed(() => room.value.find(({ id }) => id === mySocketId.value)?.name)
   const currentPlayerName = computed(
@@ -108,8 +133,8 @@ export const useSocketStore = defineStore('socket', () => {
     })
 
     socket.value = io(serverUrl.value, {
-      // Cold start do tier free do Render pode demorar. Falha rápido cada
-      // tentativa e tenta de novo indefinidamente até o servidor "acordar".
+      // Render's free tier cold start can take a while. Fail fast on each
+      // attempt and keep retrying indefinitely until the server "wakes up".
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 800,
@@ -117,8 +142,9 @@ export const useSocketStore = defineStore('socket', () => {
       timeout: 8000,
     })
 
-    // Ao voltar o foco/rede, força uma reconexão imediata em vez de esperar o
-    // backoff — crucial no mobile, onde a aba é congelada em segundo plano.
+    // When focus/network comes back, force an immediate reconnect instead of
+    // waiting for the backoff — crucial on mobile, where the tab freezes in
+    // the background.
     if (!connectivityWatchersAttached && typeof window !== 'undefined') {
       connectivityWatchersAttached = true
       window.addEventListener('online', () => {
@@ -133,7 +159,7 @@ export const useSocketStore = defineStore('socket', () => {
         if (document.visibilityState === 'visible') {
           isOnline.value = typeof navigator === 'undefined' ? true : navigator.onLine
           resyncConnection()
-          // Recalcula o cronômetro: os ticks ficaram congelados em 2º plano.
+          // Recompute the timer: ticks were frozen while in the background.
           storeTimer.syncFromDeadline()
         }
       })
@@ -141,9 +167,13 @@ export const useSocketStore = defineStore('socket', () => {
 
     /** Listeners */
 
-    // Cada tentativa falha incrementa o contador → alimenta a UX "acordando…".
-    socket.value.on('connect_error', () => {
+    // Each failed attempt bumps the counter → feeds the "waking up…" UX.
+    socket.value.on(SocketEvents.ON_CONNECT_ERROR, () => {
       connectAttempts.value += 1
+    })
+
+    socket.value.on(SocketEvents.ON_ROOMS_UPDATED, (data: RoomSnapshot[]) => {
+      rooms.value = data
     })
 
     socket.value.on(SocketEvents.ON_CONNECT, () => {
@@ -191,7 +221,10 @@ export const useSocketStore = defineStore('socket', () => {
       }) => {
         saveSession(token, gId, pendingPlayerName.value)
         pendingPlayerName.value = ''
+        isOwner.value = isCreator
 
+        // ConfigView only shows up on room creation — after that, the owner
+        // adjusts settings via the manage panel (shared with player removal).
         navigate(isCreator ? SocketEvents.STATE_CONFIG : SocketEvents.STATE_LOBBY)
       },
     )
@@ -215,12 +248,14 @@ export const useSocketStore = defineStore('socket', () => {
         turns: number
         players: Player[]
         isMyTurn: boolean
+        isOwner: boolean
         remainingTurnMs: number
         newToken: string
         timerTurn: number
         timerStory: number
       }) => {
         isReconnecting.value = false
+        isOwner.value = data.isOwner
 
         const session = loadSession()
         if (session) {
@@ -249,7 +284,10 @@ export const useSocketStore = defineStore('socket', () => {
             break
           case SocketEvents.STATE_PLAYING:
             if (data.isMyTurn) {
-              storeTimer.restoreTimer(Math.round(data.remainingTurnMs / 1000))
+              // `startGame()` already resets the timers to full duration —
+              // reconnecting mid-turn under stress shouldn't hand back a
+              // clock that's nearly out (the server also re-arms its own
+              // watchdog, see the API).
               storeSettings.startGame()
               navigateTo(SocketEvents.STATE_PLAYING)
             } else {
@@ -257,6 +295,10 @@ export const useSocketStore = defineStore('socket', () => {
               navigate(SocketEvents.STATE_WAITING)
             }
             break
+          // keep: the server today only ever emits gameState lobby|playing|ended
+          // (the cards/storytelling sub-phase within a turn is client-local) —
+          // these two cases are defensive, in case a future API version starts
+          // distinguishing the current sub-phase on rejoin.
           case SocketEvents.STATE_STORYTELLING:
             if (data.isMyTurn) {
               storeTimer.restoreStoryTimer(Math.round(data.remainingTurnMs / 1000))
@@ -338,13 +380,11 @@ export const useSocketStore = defineStore('socket', () => {
       SocketEvents.ON_GAME_RESET,
       ({
         reason,
-        creatorId,
         timerTurn,
         timerStory,
         turns,
       }: {
         reason?: string
-        creatorId?: string
         timerTurn?: number
         timerStory?: number
         turns?: number
@@ -355,11 +395,10 @@ export const useSocketStore = defineStore('socket', () => {
           if (turns) storeSettings.turnMax = turns
           storeSettings.softResetGame()
 
-          if (creatorId && creatorId === mySocketId.value) {
-            navigate(SocketEvents.STATE_CONFIG)
-          } else {
-            navigate(SocketEvents.STATE_LOBBY)
-          }
+          // ConfigView is only for room creation — "play again" always goes
+          // back to the lobby; the owner changes settings later via the
+          // manage panel.
+          navigate(SocketEvents.STATE_LOBBY)
         } else {
           clearSession()
           storeSettings.resetGame()
@@ -367,6 +406,21 @@ export const useSocketStore = defineStore('socket', () => {
         }
       },
     )
+
+    socket.value.on(SocketEvents.ON_KICKED, ({ reason }: { reason: string }) => {
+      clearSession()
+      storeSettings.numPlayers = 0
+      justJoined.value = false
+      gameId.value = ''
+      isOwner.value = false
+      navigate(SocketEvents.STATE_SETUP)
+      storeGlobal.openNotification({
+        title: 'Você foi removido da sala',
+        message: reason,
+        type: 'error',
+        duration: 6000,
+      })
+    })
 
     socket.value.on(
       SocketEvents.ON_ROOM_CONFIG,
@@ -394,9 +448,8 @@ export const useSocketStore = defineStore('socket', () => {
       })
     })
 
-    socket.value.on(SocketEvents.ON_PLAYER_SELECTED_CARDS, ({ cards, playerNumber }) => {
+    socket.value.on(SocketEvents.ON_PLAYER_SELECTED_CARDS, ({ cards }) => {
       selectedCards.value = cards
-      console.log('Jogador', playerNumber, 'escolheu:', cards)
     })
 
     socket.value.on(
@@ -455,13 +508,11 @@ export const useSocketStore = defineStore('socket', () => {
   }
 
   const emitStartGame = () => {
-    socket.value?.emit(SocketEvents.EMIT_START_GAME, {
-      gameId: gameId.value,
-      currentPlayer: mySocketId.value,
-      numPlayers: storeSettings.numPlayers,
-      turns: storeSettings.turnMax,
-      turnDurationMs: storeTimer.baseTimerTurn * 1000,
-    })
+    socket.value?.emit(SocketEvents.EMIT_START_GAME, { gameId: gameId.value })
+  }
+
+  const emitGetRooms = () => {
+    socket.value?.emit(SocketEvents.EMIT_GET_ROOMS)
   }
 
   const emitSelectedCards = () => {
@@ -476,9 +527,10 @@ export const useSocketStore = defineStore('socket', () => {
 
     send()
 
-    // A revelação da mão não tem confirmação; um blip de Wi-Fi pode engolir o
-    // emit e os outros jogadores ficariam sem ver as cartas. Reenvia enquanto
-    // ainda formos o jogador da vez (o servidor só aceita dele), até 2x.
+    // Revealing the hand has no ack; a Wi-Fi blip could swallow the emit and
+    // leave the other players without seeing the cards. Resend while we're
+    // still the current player (the server only accepts it from them), up
+    // to 2x.
     let retries = 0
     const retry = () => {
       if (retries >= 2) return
@@ -494,16 +546,13 @@ export const useSocketStore = defineStore('socket', () => {
     const targetGameId = gameId.value
 
     const send = () =>
-      socket.value?.emit(SocketEvents.EMIT_FINISH_STORYTELLING, {
-        gameId: targetGameId,
-        currentPlayer: mySocketId.value,
-      })
+      socket.value?.emit(SocketEvents.EMIT_FINISH_STORYTELLING, { gameId: targetGameId })
 
     send()
 
-    // Reenvio se o servidor não confirmar (um blip de Wi-Fi pode engolir o emit).
-    // Enquanto ainda formos o jogador da vez, tenta de novo até 3x. Assim que o
-    // servidor avança o turno, `currentPlayerNumber` muda e paramos.
+    // Resend if the server doesn't ack (a Wi-Fi blip could swallow the emit).
+    // While we're still the current player, retry up to 3x. Once the server
+    // advances the turn, `currentPlayerNumber` changes and we stop.
     let retries = 0
     const retry = () => {
       if (retries >= 3) return
@@ -540,16 +589,21 @@ export const useSocketStore = defineStore('socket', () => {
     })
   }
 
+  const emitKickPlayer = (targetPlayerId: string) => {
+    socket.value?.emit(SocketEvents.EMIT_KICK_PLAYER, {
+      gameId: gameId.value,
+      targetPlayerId,
+    })
+  }
+
   const emitLeaveGame = () => {
     const leavingGameId = gameId.value
     clearSession()
     navigate(SocketEvents.STATE_SETUP)
     storeSettings.numPlayers = 0
     justJoined.value = false
-    socket.value?.emit(SocketEvents.EMIT_LEAVE_GAME, {
-      gameId: leavingGameId,
-      playerNumber: mySocketId.value,
-    })
+    isOwner.value = false
+    socket.value?.emit(SocketEvents.EMIT_LEAVE_GAME, { gameId: leavingGameId })
     gameId.value = ''
   }
 
@@ -559,22 +613,22 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value?.emit(SocketEvents.EMIT_REJOIN_GAME, { gameId: targetGameId, token })
   }
 
-  // Força reconexão imediata (foco/rede de volta). O handler de `connect` cuida
-  // do rejoin automático da sessão salva.
+  // Forces an immediate reconnect (focus/network back). The `connect`
+  // handler takes care of auto-rejoining the saved session.
   const resyncConnection = () => {
     if (!socket.value) return
     if (!socket.value.connected) socket.value.connect()
   }
 
-  // Alterna o endereço do servidor em runtime (nuvem ↔ local/LAN) sem rebuild.
-  // Vazio volta ao padrão (VITE_SERVER_URL).
+  // Switches the server address at runtime (cloud ↔ local/LAN) with no
+  // rebuild. Empty reverts to the default (VITE_SERVER_URL).
   const setServerUrl = (url: string) => {
     const clean = url.trim()
     try {
       if (clean && clean !== DEFAULT_SERVER_URL) localStorage.setItem(SERVER_URL_KEY, clean)
       else localStorage.removeItem(SERVER_URL_KEY)
     } catch {
-      /* localStorage indisponível — segue só em memória */
+      /* localStorage unavailable — carries on in-memory only */
     }
 
     serverUrl.value = clean || DEFAULT_SERVER_URL
@@ -597,10 +651,12 @@ export const useSocketStore = defineStore('socket', () => {
     gameId,
     isConnected,
     isReconnecting,
+    isOwner,
     isOnline,
     isDefaultServer,
     connectionPhase,
     room,
+    rooms,
     activeSession,
     currentPlayerNumber,
     myPlayerNumber,
@@ -613,11 +669,13 @@ export const useSocketStore = defineStore('socket', () => {
     resyncConnection,
     setServerUrl,
     emitJoinGame,
+    emitGetRooms,
     emitConfigGame,
     emitStartGame,
     emitSelectedCards,
     emitFinishStoryAndNext,
     emitResetGame,
     emitLeaveGame,
+    emitKickPlayer,
   }
 })

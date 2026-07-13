@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 
 export const useTimerStore = defineStore('timer', () => {
   const baseTimerTurn = ref(25)
-  const baseTimerStory = ref(45)
+  const baseTimerStory = ref(30)
 
   const timerTurn = ref(baseTimerTurn.value)
   const timerStory = ref(baseTimerStory.value)
@@ -11,10 +11,10 @@ export const useTimerStore = defineStore('timer', () => {
   const timerTurnInterval = ref<number | null>(null)
   const timerStoryInterval = ref<number | null>(null)
 
-  // Prazo absoluto (epoch ms) de cada fase. Contar a partir de um deadline —
-  // em vez de decrementar — deixa o cronômetro imune ao congelamento de
-  // setInterval quando a aba fica em segundo plano no mobile: ao voltar, o
-  // próximo tick recalcula o valor correto direto do relógio.
+  // Absolute deadline (epoch ms) for each phase. Counting from a deadline —
+  // instead of decrementing — makes the timer immune to setInterval freezing
+  // when the tab goes to the background on mobile: on return, the next tick
+  // recomputes the correct value straight from the clock.
   const turnDeadline = ref<number | null>(null)
   const storyDeadline = ref<number | null>(null)
 
@@ -74,10 +74,10 @@ export const useTimerStore = defineStore('timer', () => {
 
   const startTimerTurn = () => {
     isTurnRunning.value = true
-    // Deadline derivado do valor atual de timerTurn (respeita um restore prévio).
+    // Deadline derived from the current timerTurn value (respects a prior restore).
     turnDeadline.value = Date.now() + timerTurn.value * 1000
     if (timerTurnInterval.value) clearInterval(timerTurnInterval.value)
-    // 250ms: recupera rápido ao voltar do segundo plano, sem custo perceptível.
+    // 250ms: recovers quickly on return from the background, no perceptible cost.
     timerTurnInterval.value = setInterval(tickTurn, 250)
   }
 
@@ -99,9 +99,9 @@ export const useTimerStore = defineStore('timer', () => {
     if (timerStory.value > 0) startTimerStory()
   }
 
-  // Recalcula imediatamente os cronômetros em execução a partir do deadline.
-  // Chamado ao voltar o foco/rede, quando os ticks em segundo plano ficaram
-  // atrasados. Sem efeito se nada estiver rodando.
+  // Immediately recomputes any running timers from their deadline. Called
+  // when focus/network comes back, once background ticks have fallen behind.
+  // No effect if nothing is running.
   const syncFromDeadline = () => {
     if (isTurnRunning.value) tickTurn()
     if (isStoryRunning.value) tickStory()

@@ -56,7 +56,6 @@ export interface RoomSnapshot {
 }
 
 export type UIcons =
-  // used
   | 'alert'
   | 'checkmark'
   | 'error'
@@ -65,8 +64,3 @@ export type UIcons =
   | 'reload'
   | 'shuffle'
   | 'times'
-  // unused
-  | 'clock'
-  | 'home'
-  | 'success'
-  | 'users'

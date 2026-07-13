@@ -16,22 +16,44 @@
 - **Suíte de testes ✅.** Vitest + `@vue/test-utils` + jsdom, co-locada em
   `__tests__/`. Ver [`TESTING`](TESTING.md).
 - **Lint com SonarJS ✅.** Regras `recommended`, com relaxamentos justificados.
+- **Dono da sala ✅.** Fixo desde a criação (nunca muda por reconexão nem por
+  "jogar de novo"), aprendido via `isCreator`/`isOwner` do servidor. ConfigView
+  só aparece na criação; ajustes depois passam pelo painel `RoomManageModal`
+  (botão flutuante, visível ao dono em qualquer sala ativa).
+- **Remover jogador (kick) ✅.** Dono remove qualquer jogador pelo
+  `RoomManageModal`, lobby ou mid-jogo, com confirmação (`BaseConfirmModal`
+  `danger`). Quem é removido recebe aviso e é levado de volta ao setup.
+- **Sair da sala ✅ (já existia, ganhou confirmação).** `SetupView`/`RoomsView`
+  já permitiam abandonar uma sala; agora passam por confirmação explícita
+  avisando que a saída é definitiva (sem rejoin possível).
+- **Link de convite ✅.** Rota `/join/:gameId` — pula a lista de salas e o
+  campo de ID manual, vai direto pro nome. Botão "copiar link" no lobby
+  (só o dono vê).
+- **Reordenação no rejoin ✅ (resolvido no `storylic-api`):** reconectar
+  preserva a posição original na ordem de turnos.
+- **Timer restaurado no rejoin ✅ (resolvido):** reconectar no próprio turno
+  reinicia o cronômetro pela duração cheia (cliente e servidor alinhados —
+  ver `storylic-api`).
+- **CSP / zero inline styles ✅:** nenhum `style=`/`:style=` resta em `src/`.
+  Estático virou classe Tailwind/`.sl-*`; os 3 casos genuinamente contínuos
+  têm cada um sua solução sem inline style — `TheTimer` (largura da barra é
+  atributo SVG, não `style`), `AvatarInitials` (paleta fixa de 12 cores por
+  hash, não HSL contínuo), `TheNotification` (classes `.sl-duration-N`
+  geradas por passo de 1s, não custom property `--duration`). `TheCard`
+  (cores por categoria) recebeu o mesmo tratamento por extensão. Ver
+  `DESIGN_SYSTEM.md`.
+- **Fontes self-hosted ✅:** Montserrat variável (400–900, sem itálico — não
+  usado em lugar nenhum) servida de `src/assets/fonts/`, sem `@import` de
+  `fonts.googleapis.com`. Pixelify Sans (carregada antes, nunca referenciada
+  em nenhum `font-family`) foi removida em vez de self-hospedada.
+- **GTM condicional ao modo LAN ✅:** `main.ts` desliga o GTM quando
+  `isLanMode()` (`stores/socket.ts`, mesmo sinal de
+  `loadServerUrl()`/`storylic_server_url` que já distingue nuvem de local) é
+  verdadeiro, além do `import.meta.env.PROD` já existente.
+- **Estado só em memória no servidor ✅ (resolvido no `storylic-api`):**
+  persistência via Redis implementada lá (opt-in por `REDIS_URL`) — ver
+  `PROJECT_STATE.md` do `storylic-api`.
 
-## Pendências / dívidas conhecidas ⏳
+## Pendências / dívidas conhecidas
 
-- **Reordenação no rejoin ⏳ (baixo impacto):** ao reconectar, o jogador é
-  re-inserido no fim do `Map` de jogadores do servidor, o que pode reordenar os
-  turnos seguintes. Não trava o jogo; vale preservar a ordem de entrada no futuro.
-- **`config-game` sem dono ⛔ (de propósito, por ora):** qualquer membro pode
-  reconfigurar a sala no servidor. O cliente já só mostra a tela ao criador;
-  restringir no servidor depende da ordem de entrada (acima).
-- **Estado só em memória, instância única ⏳:** um redeploy/spindown do Render
-  apaga as salas. Mitigações: keep-warm (`/health`) e modo LAN. Persistência real
-  é fora de escopo hoje.
-- **Timer restaurado no rejoin ⏳:** ao voltar no meio do próprio turno, o fluxo
-  atual pode reiniciar o cronômetro pela base em vez do restante — o watchdog do
-  servidor limita o impacto, mas vale alinhar cliente e servidor.
-
-## Em andamento 🔬
-
-- Nada aberto no momento — próximas frentes saem das pendências acima.
+Nenhuma pendência conhecida no momento.

@@ -1,6 +1,9 @@
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+
+import BaseConfirmModal from '@/components/BaseConfirmModal.vue'
+import ConnectionStatus from '@/components/ConnectionStatus.vue'
 
 import { useSocketStore } from '@/stores/socket'
 import { useSeo } from '@/composables/useSeo'
@@ -12,12 +15,11 @@ const storeSocket = useSocketStore()
 
 useSeo({ title: 'Salas', description: 'Veja as salas ativas e entre em uma partida' })
 
-const rooms = ref<RoomSnapshot[]>([])
 const search = ref('')
 
 const filteredRooms = computed(() => {
   const q = search.value.trim().toLowerCase()
-  return q ? rooms.value.filter((r) => r.id.toLowerCase().includes(q)) : rooms.value
+  return q ? storeSocket.rooms.filter((r) => r.id.toLowerCase().includes(q)) : storeSocket.rooms
 })
 
 const statusLabel: Record<RoomSnapshot['gameState'], string> = {
@@ -56,25 +58,19 @@ const returnToRoom = (roomId: string) => {
   }
 }
 
+const pendingRoomSwap = ref<string | null>(null)
+
 const abandonAndEnter = (roomId: string) => {
   storeSocket.emitLeaveGame()
   storeSocket.gameId = roomId
   router.push({ name: 'setup-view' })
+  pendingRoomSwap.value = null
 }
 
 const goToSetup = () => router.push({ name: 'setup-view' })
 
 onMounted(() => {
-  if (storeSocket.socket) {
-    storeSocket.socket.emit(SocketEvents.EMIT_GET_ROOMS)
-    storeSocket.socket.on(SocketEvents.ON_ROOMS_UPDATED, (data: RoomSnapshot[]) => {
-      rooms.value = data
-    })
-  }
-})
-
-onUnmounted(() => {
-  storeSocket.socket?.off(SocketEvents.ON_ROOMS_UPDATED)
+  storeSocket.emitGetRooms()
 })
 </script>
 
@@ -86,7 +82,7 @@ onUnmounted(() => {
         <BaseIcon name="favicon" class="w-10 h-10" />
         <div>
           <h1 class="text-2xl font-bold text-white leading-tight">Salas ativas</h1>
-          <p class="text-white/50 text-sm">{{ rooms.length }} sala(s) encontrada(s)</p>
+          <p class="text-white/50 text-sm">{{ storeSocket.rooms.length }} sala(s) encontrada(s)</p>
         </div>
       </div>
       <button
@@ -97,10 +93,11 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <!-- Sessão ativa detectada — banner de destaque -->
+    <!-- Active session detected — highlighted banner -->
     <div
       v-if="
-        storeSocket.activeSession && rooms.some((r) => r.id === storeSocket.activeSession?.gameId)
+        storeSocket.activeSession &&
+        storeSocket.rooms.some((r) => r.id === storeSocket.activeSession?.gameId)
       "
       class="mb-6 bg-purple-500/20 border border-purple-400/30 rounded-xl px-5 py-4 flex items-center justify-between gap-4 flex-wrap"
     >
@@ -129,7 +126,7 @@ onUnmounted(() => {
       />
     </div>
 
-    <!-- Lista -->
+    <!-- List -->
     <div v-if="filteredRooms.length > 0" class="space-y-3">
       <div
         v-for="room in filteredRooms"
@@ -174,7 +171,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Status + ação -->
+        <!-- Status + action -->
         <div class="flex items-center gap-3 shrink-0">
           <span
             :class="['text-xs font-semibold px-3 py-1 rounded-full', statusColor[room.gameState]]"
@@ -201,7 +198,7 @@ onUnmounted(() => {
               ]"
               @click="
                 canJoin(room) &&
-                (storeSocket.activeSession ? abandonAndEnter(room.id) : enterRoom(room.id))
+                (storeSocket.activeSession ? (pendingRoomSwap = room.id) : enterRoom(room.id))
               "
             >
               {{ canJoin(room) ? 'Entrar' : 'Em andamento' }}
@@ -225,15 +222,18 @@ onUnmounted(() => {
       class="mt-6 pt-5 border-t border-white/10 flex items-center justify-between text-xs text-white/30"
     >
       <span>Atualizado em tempo real</span>
-      <div class="flex items-center gap-1.5">
-        <div
-          :class="[
-            'w-1.5 h-1.5 rounded-full',
-            storeSocket.isConnected ? 'bg-emerald-400' : 'bg-red-400',
-          ]"
-        />
-        {{ storeSocket.isConnected ? 'Conectado' : 'Desconectado' }}
-      </div>
+      <ConnectionStatus variant="subtle" />
     </div>
   </div>
+
+  <BaseConfirmModal
+    v-if="pendingRoomSwap"
+    title="Trocar de sala?"
+    description="Você vai sair da sua sala atual para entrar nesta — não será possível voltar para a sala anterior depois."
+    confirm-label="Sim, trocar"
+    cancel-label="Cancelar"
+    danger
+    @confirm="abandonAndEnter(pendingRoomSwap)"
+    @cancel="pendingRoomSwap = null"
+  />
 </template>

@@ -28,9 +28,9 @@ const finishStoryAndNext = () => {
   storeTimer.stopTimerStory()
   storeSocket.emitFinishStoryAndNext()
 
-  // Rede de segurança: se em 6s o servidor não avançou o turno (emit perdido num
-  // blip de Wi-Fi), reabilita o botão para o jogador tentar de novo em vez de
-  // ficar preso em "Aguardando próximo turno...".
+  // Safety net: if the server hasn't advanced the turn in 6s (emit lost to a
+  // Wi-Fi blip), re-enable the button so the player can retry instead of
+  // getting stuck on "Waiting for next turn...".
   setTimeout(() => {
     if (storeSettings.gameState === SocketEvents.STATE_STORYTELLING) {
       alreadyFinished.value = false
@@ -45,7 +45,7 @@ watch(timerStory, (v) => {
 
 <template>
   <div class="flex flex-col gap-4 pb-4">
-    <!-- Cabeçalho -->
+    <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
         <p class="sl-label">Narrando</p>
@@ -55,7 +55,7 @@ watch(timerStory, (v) => {
         <p class="sl-label">Turno</p>
         <p class="text-white font-bold text-lg leading-snug">
           {{ storeSettings.turnCurrent
-          }}<span style="color: rgba(255, 255, 255, 0.4)">/{{ storeSettings.turnMax }}</span>
+          }}<span class="text-white/40">/{{ storeSettings.turnMax }}</span>
         </p>
       </div>
     </div>
@@ -63,33 +63,22 @@ watch(timerStory, (v) => {
     <!-- Timer -->
     <TheTimer :value="timerStory" :base="storeTimer.baseTimerStory" label="Tempo para narrar" />
 
-    <!-- Instrução -->
+    <!-- Instructions -->
     <div class="sl-surface px-4 py-3 text-center">
-      <p class="text-sm leading-relaxed" style="color: rgba(255, 255, 255, 0.75)">
+      <p class="text-sm leading-relaxed text-white/75">
         Conte seu trecho usando os cards abaixo.
-        <span class="block mt-0.5 text-xs" style="color: rgba(255, 255, 255, 0.4)"
-          >Seja criativo — tudo vale!</span
-        >
+        <span class="block mt-0.5 text-xs text-white/40">Seja criativo — tudo vale!</span>
       </p>
     </div>
 
-    <!-- Mão — grid centralizado, cards em tamanho normal, readonly -->
+    <!-- Hand — centered grid, normal-sized cards, readonly -->
     <div>
       <p class="sl-label text-center mb-3">Sua mão</p>
 
-      <!-- Grid dinâmico: 1 card → centralizado; 2 → dois colunas; 3 → três colunas -->
-      <div
-        class="grid gap-3 mx-auto"
-        :style="{
-          gridTemplateColumns: `repeat(${storeCards.selectedCards.length}, minmax(0, 1fr))`,
-          maxWidth:
-            storeCards.selectedCards.length === 1
-              ? '140px'
-              : storeCards.selectedCards.length === 2
-                ? '280px'
-                : '100%',
-        }"
-      >
+      <!-- Dynamic grid: 1 card → centered; 2 → two columns; 3 → three columns.
+           A fixed class per hand size (never more than 3, capped by the card
+           store) instead of computed inline styles keeps this CSP-safe. -->
+      <div class="sl-hand-grid grid gap-3 mx-auto" :class="`sl-hand-grid--${storeCards.selectedCards.length}`">
         <TheCard
           v-for="card in storeCards.selectedCards"
           :key="card.name"
@@ -101,7 +90,7 @@ watch(timerStory, (v) => {
       </div>
     </div>
 
-    <!-- Botão terminar -->
+    <!-- Finish button -->
     <button
       :disabled="alreadyFinished"
       class="sl-btn py-5 text-lg mt-2"
@@ -111,3 +100,20 @@ watch(timerStory, (v) => {
     </button>
   </div>
 </template>
+
+<style scoped>
+.sl-hand-grid--1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  max-width: 140px;
+}
+
+.sl-hand-grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 280px;
+}
+
+.sl-hand-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 100%;
+}
+</style>

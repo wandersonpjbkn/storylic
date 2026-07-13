@@ -18,28 +18,24 @@ const props = withDefaults(
 
 const emit = defineEmits<{ click: [] }>()
 
-const meta: Record<string, { label: string; bg: string; catColor: string }> = {
-  actions: { label: 'Ação', bg: 'linear-gradient(160deg,#7f1d1d,#dc2626)', catColor: '#fca5a5' },
-  animals: { label: 'Animal', bg: 'linear-gradient(160deg,#713f12,#d97706)', catColor: '#fde68a' },
-  emotions: { label: 'Emoção', bg: 'linear-gradient(160deg,#701a75,#c026d3)', catColor: '#f5d0fe' },
-  nature: { label: 'Natureza', bg: 'linear-gradient(160deg,#134e4a,#0d9488)', catColor: '#99f6e4' },
-  objects: { label: 'Objeto', bg: 'linear-gradient(160deg,#164e63,#0891b2)', catColor: '#bae6fd' },
-  personas: {
-    label: 'Persona',
-    bg: 'linear-gradient(160deg,#7c2d12,#ea580c)',
-    catColor: '#fed7aa',
-  },
-  places: { label: 'Lugar', bg: 'linear-gradient(160deg,#1e3a8a,#2563eb)', catColor: '#bfdbfe' },
+const CATEGORY_LABELS: Record<string, string> = {
+  actions: 'Ação',
+  animals: 'Animal',
+  emotions: 'Emoção',
+  nature: 'Natureza',
+  objects: 'Objeto',
+  personas: 'Persona',
+  places: 'Lugar',
 }
 
-const m = computed(
-  () =>
-    meta[props.category] ?? {
-      label: props.category,
-      bg: 'linear-gradient(160deg,#3730a3,#6366f1)',
-      catColor: '#c7d2fe',
-    },
+// Background gradient + category-label color live in scoped CSS as
+// `--card-bg`/`--card-cat-color` custom properties, one modifier class per
+// category (see <style>) — never an inline `:style`, so this stays CSP-safe
+// under a strict `style-src`.
+const categoryClass = computed(() =>
+  props.category in CATEGORY_LABELS ? `sl-card--${props.category}` : 'sl-card--default',
 )
+const label = computed(() => CATEGORY_LABELS[props.category] ?? props.category)
 
 const imgSrc = computed(() => categoryImagePath(props.category))
 const imgFailed = ref(false)
@@ -58,90 +54,63 @@ const onImgError = () => {
   <button
     :disabled="disabled"
     :aria-pressed="readonly ? undefined : selected"
-    :aria-label="`${m.label}: ${name}`"
+    :aria-label="`${label}: ${name}`"
     :class="[
+      'sl-card aspect-[2/3]',
+      categoryClass,
       'relative select-none text-left transition-all duration-150 overflow-hidden flex flex-col',
       'rounded-2xl',
       compact ? 'min-w-[80px]' : '',
       disabled ? 'opacity-50 cursor-not-allowed' : readonly ? 'cursor-default' : 'active:scale-95',
       selected
-        ? 'ring-2 ring-white/80 scale-[1.03]'
+        ? 'ring-2 ring-white/80 scale-[1.03] sl-card--selected'
         : readonly
           ? 'shadow-md'
           : 'shadow-md hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1',
     ]"
-    :style="{
-      boxShadow: selected
-        ? '0 0 0 2px #fff, 0 0 0 4px rgba(168,85,247,.5), 0 8px 24px rgba(0,0,0,.4)'
-        : undefined,
-      aspectRatio: '2/3',
-    }"
     @click="!disabled && !readonly && emit('click')"
   >
-    <!-- ── Área da imagem — 60% do card ──────────────── -->
-    <div
-      class="relative flex items-center justify-center overflow-hidden"
-      :style="{
-        flex: '0 0 60%',
-        background: m.bg,
-      }"
-    >
-      <!-- Padrão losango -->
-      <div
-        class="absolute inset-0 pointer-events-none"
-        style="
-          background-image: repeating-linear-gradient(
-            45deg,
-            rgba(255, 255, 255, 0.04) 0,
-            rgba(255, 255, 255, 0.04) 1px,
-            transparent 0,
-            transparent 50%
-          );
-          background-size: 12px 12px;
-        "
-      />
+    <!-- ── Image area — 60% of the card ──────────────── -->
+    <div class="sl-card__image-area relative flex items-center justify-center overflow-hidden flex-[0_0_60%]">
+      <!-- Diamond pattern -->
+      <div class="sl-card__pattern absolute inset-0 pointer-events-none" />
 
-      <!-- Imagem circular cropada -->
+      <!-- Circular cropped image -->
       <div
         v-if="!imgFailed"
-        class="relative z-10 overflow-hidden"
-        :style="{
-          borderRadius: '100%',
-          width: compact ? '56px' : '76%',
-          aspectRatio: '1/1',
-          boxShadow: '0 0 0 2px rgba(255,255,255,0.12), 0 4px 16px rgba(0,0,0,0.5)',
-        }"
+        :class="compact ? 'w-14' : 'w-[76%]'"
+        class="sl-card__image-frame relative z-10 overflow-hidden rounded-full aspect-square"
       >
         <img
           :src="imgSrc"
-          :alt="m.label"
+          :alt="label"
           class="w-full h-full object-cover"
           draggable="false"
           @error="onImgError"
         />
       </div>
 
-      <!-- Fallback gradiente com label -->
+      <!-- Gradient fallback with label -->
       <span
         v-if="imgFailed"
-        class="relative z-10 font-bold uppercase tracking-widest"
-        :style="{ color: m.catColor, fontSize: compact ? '8px' : '10px', opacity: 0.7 }"
-        >{{ m.label }}</span
+        :class="compact ? 'text-[8px]' : 'text-[10px]'"
+        class="sl-card__cat-color relative z-10 font-bold uppercase tracking-widest opacity-70"
+        >{{ label }}</span
       >
 
-      <!-- Cantos decorativos -->
+      <!-- Decorative corners -->
       <span
+        :class="compact ? 'text-[7px]' : 'text-[9px]'"
         class="absolute top-1.5 left-2 text-white/20 pointer-events-none"
-        :style="{ fontSize: compact ? '7px' : '9px' }"
         >✦</span
       >
       <span
+        :class="compact ? 'text-[7px]' : 'text-[9px]'"
         class="absolute bottom-1.5 right-2 text-white/20 pointer-events-none"
-        :style="{ fontSize: compact ? '7px' : '9px' }"
         >✦</span
       >
 
-      <!-- Brilho linha no topo -->
+      <!-- Top highlight line -->
       <div class="absolute inset-x-0 top-0 h-px bg-white/30 pointer-events-none" />
 
       <!-- Checkmark -->
@@ -153,33 +122,88 @@ const onImgError = () => {
       </div>
     </div>
 
-    <!-- ── Banner nome — 40% do card ─────────────────── -->
+    <!-- ── Name banner — 40% of the card ─────────────────── -->
     <div
-      class="flex-1 flex flex-col items-center justify-center text-center"
-      :style="{
-        background: 'rgba(0,0,0,0.60)',
-        borderTop: '1px solid rgba(255,255,255,0.12)',
-        padding: compact ? '5px 6px' : '10px 10px',
-        backdropFilter: 'blur(4px)',
-      }"
+      :class="compact ? 'px-1.5 py-[5px]' : 'p-2.5'"
+      class="sl-card__banner flex-1 flex flex-col items-center justify-center text-center bg-black/60 border-t border-white/[0.12] backdrop-blur-sm"
     >
       <p
-        class="font-bold uppercase tracking-wider leading-none mb-1"
-        :style="{
-          color: m.catColor,
-          fontSize: compact ? '7px' : '9px',
-          letterSpacing: '0.1em',
-        }"
+        :class="compact ? 'text-[7px]' : 'text-[9px]'"
+        class="sl-card__cat-color font-bold uppercase tracking-[0.1em] leading-none mb-1"
       >
-        {{ m.label }}
+        {{ label }}
       </p>
 
-      <p
-        class="font-black text-white leading-tight"
-        :style="{ fontSize: compact ? '11px' : '15px' }"
-      >
+      <p :class="compact ? 'text-[11px]' : 'text-[15px]'" class="font-black text-white leading-tight">
         {{ name }}
       </p>
     </div>
   </button>
 </template>
+
+<style scoped>
+.sl-card--actions {
+  --card-bg: linear-gradient(160deg, #7f1d1d, #dc2626);
+  --card-cat-color: #fca5a5;
+}
+.sl-card--animals {
+  --card-bg: linear-gradient(160deg, #713f12, #d97706);
+  --card-cat-color: #fde68a;
+}
+.sl-card--emotions {
+  --card-bg: linear-gradient(160deg, #701a75, #c026d3);
+  --card-cat-color: #f5d0fe;
+}
+.sl-card--nature {
+  --card-bg: linear-gradient(160deg, #134e4a, #0d9488);
+  --card-cat-color: #99f6e4;
+}
+.sl-card--objects {
+  --card-bg: linear-gradient(160deg, #164e63, #0891b2);
+  --card-cat-color: #bae6fd;
+}
+.sl-card--personas {
+  --card-bg: linear-gradient(160deg, #7c2d12, #ea580c);
+  --card-cat-color: #fed7aa;
+}
+.sl-card--places {
+  --card-bg: linear-gradient(160deg, #1e3a8a, #2563eb);
+  --card-cat-color: #bfdbfe;
+}
+.sl-card--default {
+  --card-bg: linear-gradient(160deg, #3730a3, #6366f1);
+  --card-cat-color: #c7d2fe;
+}
+
+.sl-card--selected {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px rgba(168, 85, 247, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.sl-card__image-area {
+  background: var(--card-bg);
+}
+
+.sl-card__cat-color {
+  color: var(--card-cat-color);
+}
+
+.sl-card__pattern {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.04) 0,
+    rgba(255, 255, 255, 0.04) 1px,
+    transparent 0,
+    transparent 50%
+  );
+  background-size: 12px 12px;
+}
+
+.sl-card__image-frame {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.12),
+    0 4px 16px rgba(0, 0, 0, 0.5);
+}
+</style>

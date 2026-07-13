@@ -27,8 +27,11 @@
 ## Stores (Pinia) ✅
 
 - **`socket`** — dono da conexão: cria o socket, registra todos os listeners,
-  guarda a sessão (`sessionStorage`), expõe os `emit*`, a `connectionPhase`
-  (cold start), o `setServerUrl` (nuvem ↔ LAN) e o `resyncConnection`.
+  guarda a sessão (`sessionStorage`), expõe os `emit*` (incl.
+  `emitKickPlayer`), o `isOwner`, a `connectionPhase` (cold start), o
+  `setServerUrl` (nuvem ↔ LAN) e o `resyncConnection`. Sair da sala
+  (`emitLeaveGame`) e remover jogador (`emitKickPlayer`) são ações
+  permanentes — sempre atrás de um `BaseConfirmModal` (`danger`) na UI.
 - **`settings`** — `gameState`, `numPlayers`, `playerName`, `turnCurrent/Max`;
   orquestra o fluxo de turno no cliente (`startGame`, `finishTurn`, resets).
 - **`cards`** — baralho embaralhado, mão exibida/selecionada, `dealCards`, `shuffle`.
@@ -44,26 +47,42 @@ Para evitar import circular, `settings` recebe callbacks (`setNavigateCallback`,
 
 `router/index.ts` tem uma rota por estado; `composables/useNavigator.ts` mapeia
 `GameState → nome de rota` (`navigateTo`). O `beforeEach` protege as rotas de jogo
-(exige sessão ativa ou estado coerente). A navegação é dirigida pelo servidor: os
-eventos de socket chamam `navigate(state)`.
+(exige sessão ativa ou estado coerente). A navegação é majoritariamente dirigida
+pelo servidor: eventos de socket chamam `navigate(state)`. **Exceção:**
+`ConfigView.vue` navega para o lobby direto no cliente ao confirmar — é uma
+transição local do dono (nenhum outro jogador vê a `ConfigView`), sem necessidade
+de um round-trip ao servidor só para trocar de tela.
 
 ## Máquina de estados ✅
 
-`setup → (config | lobby) → playing → [waiting] → storytelling → ended`
+`rooms → setup → (config | lobby) → playing → [waiting] → storytelling → ended`
 
-- **setup** entra na sala; **config** (só criador) define timers/turnos; **lobby**
-  aguarda e inicia. Durante a partida, cada cliente alterna localmente entre
-  **playing** (monta a mão), **storytelling** (narra) e **waiting** (vez de outro).
+- **rooms** (rota raiz `/`) lista salas ativas; **setup** entra numa sala
+  (direto, por link de convite `/join/:gameId`, ou por ID digitado); **config**
+  (só o **dono**, e só na **criação** da sala — nunca de novo depois, nem em
+  "jogar de novo") define timers/turnos; **lobby** aguarda e inicia. Durante a
+  partida, cada cliente alterna localmente entre **playing** (monta a mão),
+  **storytelling** (narra) e **waiting** (vez de outro).
 - O **servidor** só distingue `lobby | playing | ended`; waiting/storytelling são
   distinções locais do cliente (ver `storylic-api`).
+- **Dono da sala:** `isOwner` (store `socket`) vem do servidor em `join-ack`
+  (`isCreator`) e `rejoin-ack` (`isOwner`) — nunca inferido no cliente, e
+  estável através de reconexão. Depois da criação, o dono ajusta config e
+  remove jogadores pelo painel `RoomManageModal` (botão flutuante em
+  `App.vue`, visível em qualquer estado de sala ativa — kick funciona lobby
+  e mid-jogo, reconfigurar só no lobby).
 
 ## Conexão e resiliência ✅
 
 - `io(serverUrl, { reconnection, reconnectionDelay, timeout })` — tentativas
   rápidas e infinitas para o cold start do Render.
 - Ao `connect`, se há sessão salva, emite `rejoin-game` automaticamente.
-- **`connectionPhase`** (`online | offline | waking | connecting`) alimenta o
-  overlay "Acordando o servidor…" / "Sem conexão".
+- **`connectionPhase`** (`online | offline | waking | connecting | stuck`) alimenta
+  o overlay "Acordando o servidor…" / "Sem conexão". Após `STUCK_THRESHOLD`
+  (~13) tentativas falhas sem sucesso, vira `stuck`: a mensagem admite que algo
+  está errado (em vez de insistir que "já já acorda") e expõe o
+  `ServerSwitcher` direto no overlay, para o jogador poder trocar de servidor
+  sem ficar preso num loading eterno.
 - **`visibilitychange`/`online`** forçam reconexão imediata e `syncFromDeadline`.
 - **URL do servidor configurável em runtime** (`setServerUrl`, `localStorage`):
   alterna entre a nuvem e um servidor local (modo LAN). Ver `PROJECT_STATE`.

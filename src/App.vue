@@ -1,35 +1,64 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 
 import TheNotification from '@/components/TheNotification.vue'
+import ServerSwitcher from '@/components/ServerSwitcher.vue'
+import RoomManageModal from '@/components/RoomManageModal.vue'
 
 import { useSocketStore } from '@/stores/socket'
+import { useSettingStore } from '@/stores/settings'
 import { useCardsStore } from '@/stores/cards'
 import { useTimerStore } from '@/stores/timer'
 import { initNavigator } from '@/composables/useNavigator'
+import { SocketEvents } from '@/constants/socketEvents'
 
 const router = useRouter()
 const storeSocket = useSocketStore()
+const storeSettings = useSettingStore()
 const storeCards = useCardsStore()
 const storeTimer = useTimerStore()
 
 initNavigator(router)
 
-// Overlay de cold start (Render free) / rede caída. Só aparece depois de algumas
-// tentativas falhas, para não piscar numa conexão rápida.
+const showManageModal = ref(false)
+
+// Manage-room button: only the owner sees it, and only while a room is
+// active — ConfigView already covers the 1st-time setup, and
+// RoomsView/SetupView/EndedView have no ongoing room to manage.
+const roomManageableStates: string[] = [
+  SocketEvents.STATE_LOBBY,
+  SocketEvents.STATE_PLAYING,
+  SocketEvents.STATE_WAITING,
+  SocketEvents.STATE_STORYTELLING,
+]
+const canManageRoom = computed(
+  () => storeSocket.isOwner && roomManageableStates.includes(storeSettings.gameState),
+)
+
+// Cold-start (Render free tier) / network-down overlay. Only shows up after
+// a few failed attempts, so it doesn't flicker on a fast connection.
 const connectionOverlay = computed(() => {
   if (storeSocket.isReconnecting) return null
   if (storeSocket.connectionPhase === 'offline') {
     return {
       title: 'Sem conexão de rede',
       subtitle: 'Verifique o Wi-Fi ou os dados móveis. Reconectando sozinho…',
+      showServerSwitcher: false,
     }
   }
   if (storeSocket.connectionPhase === 'waking') {
     return {
       title: 'Acordando o servidor…',
       subtitle: 'No primeiro acesso o servidor gratuito pode levar até ~1 min para ligar.',
+      showServerSwitcher: false,
+    }
+  }
+  if (storeSocket.connectionPhase === 'stuck') {
+    return {
+      title: 'Não foi possível conectar',
+      subtitle: 'Isso está demorando mais que o normal. Continuamos tentando sozinhos, mas você também pode trocar de servidor abaixo.',
+      showServerSwitcher: true,
     }
   }
   return null
@@ -47,13 +76,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    class="sl-root min-h-screen"
-    style="
-      padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
-        env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-    "
-  >
+  <div class="sl-root min-h-screen">
     <main class="max-w-lg mx-auto px-4 pt-6 pb-10">
       <router-view />
     </main>
@@ -70,8 +93,7 @@ onUnmounted(() => {
     >
       <div
         v-if="storeSocket.isReconnecting"
-        class="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4"
-        style="background: rgba(30, 10, 60, 0.88); backdrop-filter: blur(10px)"
+        class="sl-reconnect-overlay fixed inset-0 z-50 flex flex-col items-center justify-center gap-4"
         role="status"
         aria-live="polite"
       >
@@ -80,9 +102,7 @@ onUnmounted(() => {
           aria-hidden="true"
         />
         <p class="text-white text-lg font-bold">Reconectando...</p>
-        <p style="color: rgba(255, 255, 255, 0.5)" class="text-sm">
-          Verificando sua sessão anterior
-        </p>
+        <p class="text-white/50 text-sm">Verificando sua sessão anterior</p>
       </div>
     </transition>
   </Teleport>
@@ -98,8 +118,7 @@ onUnmounted(() => {
     >
       <div
         v-if="connectionOverlay"
-        class="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 px-8 text-center"
-        style="background: rgba(30, 10, 60, 0.9); backdrop-filter: blur(10px)"
+        class="sl-connection-overlay fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 px-8 text-center"
         role="status"
         aria-live="polite"
       >
@@ -108,43 +127,57 @@ onUnmounted(() => {
           aria-hidden="true"
         />
         <p class="text-white text-lg font-bold">{{ connectionOverlay.title }}</p>
-        <p style="color: rgba(255, 255, 255, 0.55)" class="text-sm max-w-xs">
+        <p class="text-white/[0.55] text-sm max-w-xs">
           {{ connectionOverlay.subtitle }}
         </p>
+        <ServerSwitcher v-if="connectionOverlay.showServerSwitcher" class="w-full max-w-xs" />
       </div>
     </transition>
   </Teleport>
+
+  <button
+    v-if="canManageRoom"
+    type="button"
+    class="sl-manage-fab fixed z-30 flex items-center justify-center rounded-full shadow-lg w-12 h-12 right-4"
+    aria-label="Gerenciar sala"
+    @click="showManageModal = true"
+  >
+    <span class="text-xl" aria-hidden="true">⚙️</span>
+  </button>
+
+  <RoomManageModal v-if="showManageModal" @close="showManageModal = false" />
 
   <the-notification />
 </template>
 
 <style lang="scss">
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,700;0,900;1,400&display=swap');
+// Montserrat is self-hosted via src/assets/scss/modules/_fonts.scss
+// (imported globally through main.scss), not re-declared here.
 
 :root {
-  /* Fundo — gradiente indigo→purple→pink igual ao original */
+  /* Background — indigo→purple→pink gradient, same as the original */
   --sl-bg-from: #312e81;
   --sl-bg-via: #581c87;
   --sl-bg-to: #831843;
 
-  /* Superfícies — vidro sobre o gradiente */
+  /* Surfaces — glass over the gradient */
   --sl-glass: rgba(255, 255, 255, 0.1);
   --sl-glass-hover: rgba(255, 255, 255, 0.15);
   --sl-glass-2: rgba(255, 255, 255, 0.06);
   --sl-border: rgba(255, 255, 255, 0.18);
   --sl-border-soft: rgba(255, 255, 255, 0.1);
 
-  /* Texto — sempre legível sobre o gradiente escuro.
-     --sl-text-3 usa 0.7 (não 0.5) para os rótulos/hints passarem no contraste
-     WCAG AA sobre o vidro; abaixo disso o texto informativo falhava em AA. */
+  /* Text — always legible over the dark gradient.
+     --sl-text-3 uses 0.7 (not 0.5) so labels/hints pass WCAG AA contrast
+     over the glass; below that, informative text failed AA. */
   --sl-text: #ffffff;
   --sl-text-2: rgba(255, 255, 255, 0.8);
   --sl-text-3: rgba(255, 255, 255, 0.7);
 
-  /* Anel de foco visível (teclado) — rosa claro, legível sobre o gradiente. */
+  /* Visible focus ring (keyboard) — light pink, legible over the gradient. */
   --sl-focus: #f9a8d4;
 
-  /* Paleta de acento */
+  /* Accent palette */
   --sl-pink: #ec4899;
   --sl-purple: #a855f7;
   --sl-indigo: #6366f1;
@@ -152,11 +185,11 @@ onUnmounted(() => {
   --sl-orange: #f97316;
   --sl-green: #22c55e;
 
-  /* Botão primário — pink→purple */
+  /* Primary button — pink→purple */
   --sl-btn-grad: linear-gradient(135deg, #ec4899, #a855f7);
   --sl-btn-shadow: 0 4px 16px rgba(168, 85, 247, 0.4);
 
-  /* Botão de confirmação — amber→pink */
+  /* Confirm button — amber→pink */
   --sl-btn-confirm-grad: linear-gradient(135deg, #f59e0b, #ec4899);
   --sl-btn-confirm-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
 }
@@ -178,19 +211,19 @@ button {
   position: relative;
 }
 
-/* ── Foco visível por teclado (WCAG 2.4.7) ─────────────────────────────────
-   O :active/hover dos botões não deixava rastro para quem navega por teclado. */
+/* ── Visible keyboard focus (WCAG 2.4.7) ────────────────────────────────────
+   Buttons' :active/hover left no trace for keyboard navigation. */
 :focus-visible {
   outline: 3px solid var(--sl-focus);
   outline-offset: 2px;
 }
-/* Some com o outline só para quem usa ponteiro (mantém para teclado). */
+/* Drop the outline only for pointer users (keeps it for keyboard). */
 :focus:not(:focus-visible) {
   outline: none;
 }
 
-/* ── Conteúdo só para leitores de tela ─────────────────────────────────────
-   Visível para tecnologia assistiva, invisível na tela. */
+/* ── Content for screen readers only ───────────────────────────────────────
+   Visible to assistive technology, invisible on screen. */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -203,9 +236,9 @@ button {
   border: 0;
 }
 
-/* ── Respeitar prefers-reduced-motion (WCAG 2.3.3) ─────────────────────────
-   Neutraliza spinner, pulse, barra de progresso e transforms para quem pede
-   menos movimento. */
+/* ── Respect prefers-reduced-motion (WCAG 2.3.3) ───────────────────────────
+   Neutralizes spinner, pulse, progress bar and transforms for anyone who
+   asks for less motion. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -220,10 +253,29 @@ button {
 .sl-root {
   position: relative;
   min-height: 100dvh;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 
-/* Backdrop fixo via pseudo-elemento — evita o jank de `background-attachment:
-   fixed` no Safari mobile e cobre a área do notch / barra de URL. */
+.sl-reconnect-overlay {
+  background: rgba(30, 10, 60, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.sl-connection-overlay {
+  background: rgba(30, 10, 60, 0.9);
+  backdrop-filter: blur(10px);
+}
+
+.sl-manage-fab {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  background: rgba(30, 10, 60, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(6px);
+}
+
+/* Fixed backdrop via pseudo-element — avoids the `background-attachment:
+   fixed` jank on Safari mobile and covers the notch / URL bar area. */
 .sl-root::before {
   content: '';
   position: fixed;
@@ -237,7 +289,7 @@ button {
   );
 }
 
-/* ── Superfície vidro ──────────────────────────────────────────────────── */
+/* ── Glass surface ─────────────────────────────────────────────────────── */
 .sl-surface {
   background: var(--sl-glass);
   border: 1px solid var(--sl-border);
@@ -245,7 +297,7 @@ button {
   backdrop-filter: blur(4px);
 }
 
-/* ── Tipografia ────────────────────────────────────────────────────────── */
+/* ── Typography ────────────────────────────────────────────────────────── */
 .sl-label {
   color: var(--sl-text-3);
   font-size: 10px;
@@ -254,7 +306,7 @@ button {
   text-transform: uppercase;
 }
 
-/* ── Botão primário ────────────────────────────────────────────────────── */
+/* ── Primary button ────────────────────────────────────────────────────── */
 .sl-btn {
   display: block;
   width: 100%;
@@ -284,7 +336,7 @@ button {
   }
 }
 
-/* ── Botão confirmar ───────────────────────────────────────────────────── */
+/* ── Confirm button ────────────────────────────────────────────────────── */
 .sl-btn-confirm {
   display: block;
   width: 100%;
@@ -308,7 +360,7 @@ button {
   }
 }
 
-/* ── Botão secundário ──────────────────────────────────────────────────── */
+/* ── Secondary button ──────────────────────────────────────────────────── */
 .sl-btn-ghost {
   display: inline-flex;
   align-items: center;
@@ -332,7 +384,7 @@ button {
   }
 }
 
-/* ── Scrollbar oculta ──────────────────────────────────────────────────── */
+/* ── Hidden scrollbar ──────────────────────────────────────────────────── */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;

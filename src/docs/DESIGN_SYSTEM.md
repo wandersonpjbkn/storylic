@@ -6,7 +6,8 @@
 ## Fundação ✅
 
 - **Identidade:** vidro (glassmorphism) sobre um gradiente escuro
-  indigo → roxo → rosa. Fonte **Montserrat**.
+  indigo → roxo → rosa. Fonte **Montserrat** (self-hosted, variável 400–900,
+  `src/assets/fonts/` — sem `@import` de `fonts.googleapis.com`).
 - **Backdrop:** o gradiente vive num pseudo-elemento `.sl-root::before` fixo
   (evita o jank de `background-attachment: fixed` no Safari mobile); altura em
   `100dvh`; `viewport-fit=cover` para respeitar o safe-area do notch.
@@ -35,15 +36,31 @@ Definidos em `App.vue` (`:root`):
 
 - **`TheCard`** — carta 2:3; 60% imagem (círculo cropado sobre gradiente da
   categoria) + 40% banner com rótulo e nome; estados `selected` (ring + check),
-  `disabled`, `compact`, `readonly`. Cores/rótulos por categoria no próprio SFC.
+  `disabled`, `compact`, `readonly`. Cores/rótulos por categoria: uma classe
+  modificadora `.sl-card--<categoria>` por categoria (`--card-bg`/
+  `--card-cat-color` como custom properties), nunca `:style` — CSP-safe sob
+  `style-src` estrito.
 - **`TheTimer`** — número + barra; três fases por proporção restante:
   **calm** (>50%, verde), **warning** (>25%, laranja), **critical** (≤25%,
-  vermelho, pulsa). Recebe `value`/`base`/`label`.
+  vermelho, pulsa), aplicadas via classe `.sl-timer--<fase>` (não `:style`).
+  Recebe `value`/`base`/`label`. A barra é um `<svg>` com `<rect>`s — a
+  largura (única grandeza genuinamente contínua) é atributo `width` do SVG,
+  não propriedade `style` (SVG não é coberto por `style-src`).
 - **`BaseSlider`** — usa `v-model` (`defineModel`); props `title`, **`description`**,
   `min`/`max`/`step`. (A prop é `description` — ver regressão em `TESTING`.)
-- **`AvatarInitials`** — iniciais + cor derivada de hash do nome (determinística).
+- **`RoomConfigSliders`** — o trio `BaseSlider` (tempo de cards/narração/
+  turnos) compartilhado por `ConfigView` e `RoomManageModal`.
+- **`AvatarInitials`** — iniciais + cor por hash do nome, determinística —
+  índice fixo (`hash % 12`) numa paleta de 12 cores geradas via `@for` do
+  SCSS (`.sl-avatar-color-0`..`11`), não um HSL contínuo computado em
+  `:style`.
 - **`TheNotification`** — toast responsivo (centralizado no mobile, canto no
-  desktop) com barra de progresso.
+  desktop) com barra de progresso. Duração da barra por classe
+  `.sl-duration-<ms>` (gerada em passos de 1s via `@for`), não custom
+  property `--duration` via `:style`.
+- **`ConnectionStatus`** — indicador de conexão (dot + rótulo); variantes
+  `prominent` (formulários, com hint opcional quando desconectado) e
+  `subtle` (rodapé do `RoomsView`, sem cor no texto).
 
 ## Mobile ✅
 

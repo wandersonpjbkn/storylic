@@ -11,7 +11,7 @@ export const GAME_ROUTES: Record<string, string> = {
   ended: 'ended-view',
 }
 
-export const PUBLIC_ROUTES = ['rooms-view', 'setup-view']
+export const PUBLIC_ROUTES = ['rooms-view', 'setup-view', 'join-view']
 
 let _router: Router | null = null
 

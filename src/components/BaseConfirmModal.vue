@@ -28,7 +28,7 @@ const onKeydown = (e: KeyboardEvent) => {
   }
   if (e.key !== 'Tab') return
 
-  // Trap de foco: Tab circula só entre os focáveis do modal (WCAG 2.1.2/2.4.3).
+  // Focus trap: Tab cycles only through the modal's focusable elements (WCAG 2.1.2/2.4.3).
   const focusables = dialogRef.value?.querySelectorAll<HTMLElement>(
     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
   )
@@ -54,7 +54,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKeydown)
-  // Devolve o foco a quem abriu o modal (WCAG 2.4.3).
+  // Returns focus to whoever opened the modal (WCAG 2.4.3).
   previouslyFocused?.focus?.()
 })
 </script>
@@ -63,8 +63,7 @@ onBeforeUnmount(() => {
   <!-- Backdrop -->
   <Teleport to="body">
     <div
-      class="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style="background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px)"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       @click.self="emit('cancel')"
     >
       <!-- Modal -->
