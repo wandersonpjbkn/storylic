@@ -361,6 +361,11 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value.on(SocketEvents.ON_PLAYER_TURN, (data) => {
       storeSettings.turnCurrent = data.currentTurn
       currentPlayerNumber.value = data.currentPlayer
+      // The previous player's revealed hand is no longer valid the moment the
+      // turn advances — without this, WaitingView shows the new player's name
+      // above the stale cards of whoever played before them, until the new
+      // player finishes their own turn and broadcasts their hand.
+      selectedCards.value = []
 
       if (data.currentPlayer === mySocketId.value) {
         storeSettings.startGame()

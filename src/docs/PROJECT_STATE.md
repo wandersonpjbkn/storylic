@@ -56,4 +56,59 @@
 
 ## Pendências / dívidas conhecidas
 
-Nenhuma pendência conhecida no momento.
+Backlog levantado em 2026-07-13, ainda não implementado — a fatiar em sessões
+futuras. Nenhum destes itens está desenhado em detalhe; entrar em cada um
+exige uma sessão de planejamento própria antes de codar.
+
+### Poderes do dono da sala
+
+- **Resetar o jogo a qualquer momento** (voltar ao lobby / menu de gerenciar
+  sala). O evento `reset-game`/`emitResetGame` (`stores/socket.ts`) já existe
+  e funciona — hoje só é acionado pelo botão "jogar de novo" do `EndedView`,
+  após o fim natural do jogo. Falta um gatilho equivalente no
+  `RoomManageModal`, com confirmação, chamável durante o jogo.
+- **Aviso de alterações não salvas** ao fechar o `RoomManageModal` (botão × ou
+  clique no backdrop) sem clicar em "salvar configuração" — hoje o rascunho é
+  descartado silenciosamente.
+- **Auto-fechar o modal ao salvar.** `useRoomConfigForm`'s `save()` já aceita
+  um callback `onSave` (usado por `ConfigView` para navegar ao lobby); o
+  `RoomManageModal` não passa esse callback, então fica aberto após salvar.
+- **Contagem regressiva da reserva de vaga (60s)** visível para o dono. O
+  backend já manda `reservedFor` no payload de `player-disconnected`
+  (consumido hoje só como duração de um toast de disparo único) — falta virar
+  um contador ao vivo em algum lugar da UI (pelo menos para o dono, que é
+  quem decide o destino da sala).
+
+### Poder de todos os jogadores
+
+- **Abandonar o jogo a qualquer momento**, inclusive em pleno
+  `playing`/`storytelling` (hoje `abandonRoom` só existe em `SetupView` e
+  `RoomsView`, telas pré-jogo), sem possibilidade de retorno. O mecanismo de
+  bloqueio de rejoin após saída definitiva já existe (mesmo usado por
+  `leave-game`/`kick-player`) e é reaproveitável.
+
+### Ajuste de UI geral (não é um "poder")
+
+- Remover o "enlarge" do dígito do timer nas fases crítica/warning
+  (`TheTimer.vue`, troca de `text-5xl`→`text-6xl`→`text-7xl`) — 
+  manter a indicação por cor e o pulse, mas não a mudança de tamanho
+  do texto para não deslocar outros elementos na tela.
+
+### Seção "Avançado" (toggle por sala, configurável só pelo dono)
+
+Backlog greenfield — nada disto está em nenhum doc hoje. Agrupado como
+proposto:
+
+- **Polish & game feel:** som/haptic feedback no timer e na confirmação da
+  mão; preview de card em toque longo (modal com arte ampliada); glossário de
+  cards colapsável, organizado por categoria.
+- **Configuração de partida:** filtro de categorias no baralho (hoje sempre
+  as 7 — `src/data/categories/*.json`).
+- **Estrutura narrativa:** cartas de evento — deck paralelo com eventos que
+  disparam aleatoriamente.
+- **Interação entre jogadores:** desafio secreto — um jogador sorteado
+  atribui secretamente um card extra que o narrador deve incluir.
+- **Pós-jogo e memória:** título da sessão ao final do jogo; link
+  compartilhável (dados da sessão em base64); linha do tempo de cards por
+  jogador; votação "melhor narração"; votação "card mais improvável";
+  exportar história em PDF/texto.

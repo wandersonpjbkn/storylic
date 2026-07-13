@@ -121,3 +121,29 @@ describe('socket store — dono da sala e remoção', () => {
     expect(sessionStorage.getItem('storylic_session')).toBeNull()
   })
 })
+
+describe('socket store — cards reveladas na tela de espera', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    localStorage.clear()
+    sessionStorage.clear()
+    vi.clearAllMocks()
+  })
+
+  it('a mão revelada do jogador anterior some assim que o turno avança', () => {
+    const store = useSocketStore()
+    store.connectToServer()
+
+    handlerFor('player-selected-cards')?.({
+      cards: [{ name: 'Dragão', category: 'personas' }],
+      playerNumber: 'player-a',
+    })
+    expect(store.currentCards).toHaveLength(1)
+
+    // Turno avança para outro jogador — a mão de A não é mais válida, mesmo
+    // antes de B confirmar a própria (regressão: ficava "presa" até lá).
+    handlerFor('player-turn')?.({ currentPlayer: 'player-b', currentTurn: 2 })
+
+    expect(store.currentCards).toEqual([])
+  })
+})

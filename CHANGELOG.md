@@ -3,6 +3,39 @@
 Histórico de mudanças concluídas. Os docs em `src/docs/` descrevem só o **estado
 atual**; o que **mudou** e por quê mora aqui.
 
+## 2026-07-13 — Fix: barra de progresso do `TheTimer` e cards revelados na tela de espera
+
+- **Fix (borda arredondada esticada):** `TheTimer` usava
+  `viewBox="0 0 100 8"` e `preserveAspectRatio="none"` num SVG renderizado bem
+  mais largo que alto — o `rx="4"` do `<rect>` sofria a mesma escala
+  não-uniforme, virando uma
+  "bolha" oval em vez do canto sutil que a barra tinha antes de virar SVG.
+  Removido `viewBox`/`preserveAspectRatio`; larguras agora são atributos
+  `%` (`width="100%"` / `:width="pct*100 + '%'"`), o que faz o sistema de
+  coordenadas do SVG bater 1:1 com pixels CSS reais nos dois eixos — sem
+  distorcer o raio, e continua sendo atributo (não `style=`), preservando o
+  CSP estrito do projeto.
+- **Fix (barra engasgando):** o preenchimento perseguia, com uma transição CSS
+  de 1000ms, um valor que só mudava de fato ~1x/segundo mas sem estar
+  alinhado ao polling de 250ms — cada novo tick reiniciava a transição a
+  partir de onde ela estava, gerando um "kink" de velocidade (engasgo) ou uma
+  pausa visível, dependendo do drift. `stores/timer.ts` ganhou
+  `turnProgress`/`storyProgress`: uma fração contínua (0–1, não arredondada a
+  segundo) recalculada a cada tick de 250ms a partir dos ms restantes.
+  `TheTimer` passou a receber essa fração via nova prop `progress` (no lugar
+  de derivar de `value`/`base`) e a transição do preenchimento caiu de
+  `duration-1000` para `duration-200` — sempre menor que o intervalo de
+  polling, então cada passo termina de interpolar antes do próximo chegar.
+- **Fix (cards revelados "presos" na tela de espera):** `WaitingView` mostra o
+  nome do jogador da vez (sempre correto) acima das cards que ele revelou
+  (`stores/socket.ts`'s `selectedCards`), mas essa lista só era escrita pelo
+  evento `player-selected-cards` (emitido no **fim** da fase de montar a mão)
+  e nunca era limpa. Quando o turno avançava (`player-turn`), o nome mudava na
+  hora mas a mão exibida continuava sendo a do jogador **anterior** até o novo
+  jogador terminar a própria vez — quem estava esperando via "Cards de B" com
+  as cartas de A. `ON_PLAYER_TURN` agora zera `selectedCards` a cada avanço de
+  turno.
+
 ## 2026-07-12 — CSP (zero inline styles), fontes self-hosted, GTM condicional, diretriz SOLID/DRY
 
 - **Fix (achado na verificação em modo LAN real, servido pelo `storylic-api`

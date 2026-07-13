@@ -3,11 +3,11 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   value: number
-  base: number
+  progress: number
   label?: string
 }>()
 
-const pct = computed(() => Math.max(0, props.value / props.base))
+const pct = computed(() => Math.max(0, Math.min(1, props.progress)))
 const phase = computed(() => {
   if (pct.value > 0.5) return 'calm'
   if (pct.value > 0.25) return 'warning'
@@ -51,16 +51,19 @@ const announcement = computed(() => {
 
     <!-- Solid bar — green/orange/red, no gradient. Fill width is a plain SVG
          attribute (not a `style` property), so it stays CSP-safe under a
-         strict `style-src` with no `unsafe-inline`. -->
-    <svg class="block w-full h-2" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true">
-      <rect x="0" y="0" width="100" height="8" rx="4" class="sl-timer__bar-track" />
+         strict `style-src` with no `unsafe-inline`. No viewBox: the SVG's
+         coordinate system then matches real CSS pixels 1:1 on both axes, so
+         `rx` renders as a true, subtle rounded corner instead of being
+         stretched horizontally by a non-uniform viewBox scale. -->
+    <svg class="block w-full h-2" aria-hidden="true">
+      <rect x="0" y="0" width="100%" height="8" rx="4" class="sl-timer__bar-track" />
       <rect
         x="0"
         y="0"
-        :width="pct * 100"
+        :width="`${pct * 100}%`"
         height="8"
         rx="4"
-        class="sl-timer__bar-fill transition-all duration-1000 ease-linear"
+        class="sl-timer__bar-fill transition-all duration-200 ease-linear"
       />
     </svg>
 

@@ -47,7 +47,7 @@ const finishTurn = () => {
     </div>
 
     <!-- Timer -->
-    <TheTimer :value="timerTurn" :base="storeTimer.baseTimerTurn" label="Tempo para montar a mão" />
+    <TheTimer :value="timerTurn" :progress="storeTimer.turnProgress" label="Tempo para montar a mão" />
 
     <!-- Available deck -->
     <div>

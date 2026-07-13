@@ -25,6 +25,22 @@ describe('timer store (deadline-based)', () => {
     expect(timer.isTurnRunning).toBe(true)
   })
 
+  it('turnProgress é contínuo (não arredondado a segundo) e some no final', () => {
+    const timer = useTimerStore()
+    timer.baseTimerTurn = 10
+    timer.resetTimers()
+    expect(timer.turnProgress).toBe(1)
+
+    timer.startTimerTurn()
+    vi.advanceTimersByTime(3000)
+
+    expect(timer.timerTurn).toBe(7)
+    expect(timer.turnProgress).toBeCloseTo(0.7, 1)
+
+    vi.advanceTimersByTime(7000)
+    expect(timer.turnProgress).toBe(0)
+  })
+
   it('ao chegar a zero, para e dispara onTurnExpired', () => {
     const timer = useTimerStore()
     const spy = vi.fn()

@@ -61,7 +61,7 @@ watch(timerStory, (v) => {
     </div>
 
     <!-- Timer -->
-    <TheTimer :value="timerStory" :base="storeTimer.baseTimerStory" label="Tempo para narrar" />
+    <TheTimer :value="timerStory" :progress="storeTimer.storyProgress" label="Tempo para narrar" />
 
     <!-- Instructions -->
     <div class="sl-surface px-4 py-3 text-center">
