@@ -15,17 +15,6 @@ useSeo({ title: 'Sala de espera', description: 'Aguarde sua vez de jogar' })
 
 <template>
   <div class="flex flex-col gap-4 pb-4">
-    <!-- Who's playing now -->
-    <div class="sl-surface px-5 py-4 text-center">
-      <p class="sl-label mb-1">Jogando agora</p>
-      <p class="font-bold text-2xl mb-0.5 text-pink-300">
-        {{ storeSocket.currentPlayerName }}
-      </p>
-      <p class="text-sm text-white/45">
-        Turno {{ storeSettings.turnCurrent }}/{{ storeSettings.turnMax }}
-      </p>
-    </div>
-
     <!-- My player -->
     <div class="sl-surface flex items-center gap-3 px-4 py-3">
       <AvatarInitials
@@ -39,6 +28,17 @@ useSeo({ title: 'Sala de espera', description: 'Aguarde sua vez de jogar' })
       <span class="text-xs font-bold px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30"
         >Aguardando</span
       >
+    </div>
+
+    <!-- Who's playing now -->
+    <div class="sl-surface px-5 py-4 text-center">
+      <p class="sl-label mb-1">Jogando agora</p>
+      <p class="font-bold text-2xl mb-0.5 text-pink-300">
+        {{ storeSocket.currentPlayerName }}
+      </p>
+      <p class="text-sm text-white/45">
+        Turno {{ storeSettings.turnCurrent }}/{{ storeSettings.turnMax }}
+      </p>
     </div>
 
     <!-- Current player's cards -->

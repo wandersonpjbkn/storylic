@@ -17,6 +17,7 @@ vi.mock('socket.io-client', () => ({
 }))
 
 import { useSocketStore } from '@/stores/socket'
+import { useTimerStore } from '@/stores/timer'
 
 describe('socket store — sessão e servidor', () => {
   beforeEach(() => {
@@ -145,5 +146,48 @@ describe('socket store — cards reveladas na tela de espera', () => {
     handlerFor('player-turn')?.({ currentPlayer: 'player-b', currentTurn: 2 })
 
     expect(store.currentCards).toEqual([])
+  })
+})
+
+describe('socket store — reserva de vaga ao desconectar', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    localStorage.clear()
+    sessionStorage.clear()
+    vi.clearAllMocks()
+  })
+
+  it('player-disconnected inicia a contagem regressiva da vaga', () => {
+    const store = useSocketStore()
+    const storeTimer = useTimerStore()
+    store.connectToServer()
+
+    handlerFor('player-disconnected')?.({ playerId: 'p2', playerName: 'Bruno', reservedFor: 60_000 })
+
+    expect(storeTimer.reservationList).toEqual([
+      { playerId: 'p2', playerName: 'Bruno', remainingSeconds: 60 },
+    ])
+  })
+
+  it('player-reconnected encerra a contagem regressiva da vaga', () => {
+    const store = useSocketStore()
+    const storeTimer = useTimerStore()
+    store.connectToServer()
+
+    handlerFor('player-disconnected')?.({ playerId: 'p2', playerName: 'Bruno', reservedFor: 60_000 })
+    handlerFor('player-reconnected')?.({ playerName: 'Bruno', players: [] })
+
+    expect(storeTimer.reservationList).toEqual([])
+  })
+
+  it('game-reset limpa qualquer reserva pendente', () => {
+    const store = useSocketStore()
+    const storeTimer = useTimerStore()
+    store.connectToServer()
+
+    handlerFor('player-disconnected')?.({ playerId: 'p2', playerName: 'Bruno', reservedFor: 60_000 })
+    handlerFor('game-reset')?.({ reason: 'new-game' })
+
+    expect(storeTimer.reservationList).toEqual([])
   })
 })

@@ -7,25 +7,27 @@
 
 - **Runner: Vitest** (`vitest.config.ts` standalone) + **@vue/test-utils** +
   **jsdom**. Roda com **`yarn test`** (`vitest run`) ou `yarn test:watch`.
-- **42 testes** em 11 arquivos `*.spec.ts`, co-locados em `__tests__/`.
+- **64 testes** em 13 arquivos `*.spec.ts`, co-locados em `__tests__/`.
 - **Portões de qualidade** (antes de subir): `yarn test` · `yarn ts`
   (`vue-tsc --build`, também em `yarn build`) · `yarn lint` · `yarn format`.
 
 ### Coberto hoje ✅
 
-| Arquivo                                     | O que valida                                                                    |
-| ------------------------------------------- | ------------------------------------------------------------------------------- |
-| `stores/__tests__/cards.spec.ts`            | baralho: `initializeDeck`, `dealCards`, teto de 3 no `toggle`, `shuffle`         |
-| `stores/__tests__/timer.spec.ts`            | contagem por **deadline**, expiração + callback, `syncFromDeadline`, `reset`     |
-| `stores/__tests__/socket.spec.ts`           | `activeSession` (sessionStorage), troca de servidor nuvem↔local (`setServerUrl`) |
-| `composables/__tests__/useUtils.spec.ts`    | `normalizeString`, `shuffleArray` (preserva conjunto, não muta)                  |
-| `components/__tests__/BaseSlider.spec.ts`   | **regressão** da prop `description`; título/limites; `update:modelValue`         |
-| `components/__tests__/TheTimer.spec.ts`     | fases calm/warning/critical, largura da barra                                   |
-| `components/__tests__/AvatarInitials.spec.ts` | iniciais e cor determinística por hash                                          |
-| `components/__tests__/TheCard.spec.ts`      | nome/rótulo, emite `click`; `disabled`/`readonly` não emitem; **`aria-pressed`/`aria-label`** |
-| `components/__tests__/BaseConfirmModal.spec.ts` | **a11y**: dialog rotulado, Escape → cancel, foco no confirmar, cliques          |
-| `components/__tests__/TheNotification.spec.ts` | **a11y**: `role`/`aria-live` por tipo, botão fechar rotulado                     |
-| `components/__tests__/BaseIcon.spec.ts`     | smoke das variantes (SVG async não renderiza no jsdom — ver nota no arquivo)     |
+| Arquivo                                           | O que valida                                                                                                   |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `stores/__tests__/cards.spec.ts`                  | baralho: `initializeDeck`, `dealCards`, teto de 3 no `toggle`, `shuffle`                                       |
+| `stores/__tests__/timer.spec.ts`                  | contagem por **deadline**, expiração + callback, `syncFromDeadline`, `reset`                                   |
+| `stores/__tests__/socket.spec.ts`                 | `activeSession` (sessionStorage), troca de servidor nuvem↔local (`setServerUrl`)                              |
+| `composables/__tests__/useUtils.spec.ts`          | `normalizeString`, `shuffleArray` (preserva conjunto, não muta)                                                |
+| `components/__tests__/BaseSlider.spec.ts`         | **regressão** da prop `description`; título/limites; `update:modelValue`                                       |
+| `components/__tests__/TheTimer.spec.ts`           | fases calm/warning/critical, largura da barra                                                                  |
+| `components/__tests__/AvatarInitials.spec.ts`     | iniciais e cor determinística por hash                                                                         |
+| `components/__tests__/TheCard.spec.ts`            | nome/rótulo, emite `click`; `disabled`/`readonly` não emitem; **`aria-pressed`/`aria-label`**                  |
+| `components/__tests__/BaseConfirmModal.spec.ts`   | **a11y**: dialog rotulado, Escape → cancel, foco no confirmar, cliques                                         |
+| `components/__tests__/TheNotification.spec.ts`    | **a11y**: `role`/`aria-live` por tipo, botão fechar rotulado                                                   |
+| `components/__tests__/BaseIcon.spec.ts`           | smoke das variantes (SVG async não renderiza no jsdom — ver nota no arquivo)                                   |
+| `components/__tests__/RoomManageModal.spec.ts`    | kick, reset (confirmação), aviso de alterações não salvas, auto-fechar ao salvar, contagem de vagas reservadas |
+| `composables/__tests__/useRoomConfigForm.spec.ts` | `hasChanges`, `save` (persiste + emite `config-game` + `onSave`), `reset`                                      |
 
 > O protocolo de socket em si (turnos, watchdog, reconexão) é coberto pela **suíte
 > de integração da API** (`storylic-api`), onde há um servidor real. Aqui o

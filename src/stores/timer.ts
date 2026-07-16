@@ -28,6 +28,51 @@ export const useTimerStore = defineStore('timer', () => {
   const isTurnRunning = ref(false)
   const isStoryRunning = ref(false)
 
+  // Seat-reservation countdowns (60s hold after a disconnect), keyed by
+  // playerId. Same deadline-based approach as the turn/story timers above —
+  // reservationNow is the reactive "now" `reservationList` reads to compute
+  // each entry's remaining seconds, so it re-renders every tick even for
+  // entries the Map itself doesn't touch (a Map mutation alone wouldn't
+  // reflect the mere passage of time).
+  const reservations = ref<Map<string, { playerName: string; deadline: number }>>(new Map())
+  const reservationNow = ref(Date.now())
+  let reservationInterval: ReturnType<typeof setInterval> | null = null
+
+  const tickReservations = () => {
+    reservationNow.value = Date.now()
+    for (const [playerId, r] of reservations.value) {
+      if (r.deadline <= reservationNow.value) reservations.value.delete(playerId)
+    }
+    if (reservations.value.size === 0 && reservationInterval) {
+      clearInterval(reservationInterval)
+      reservationInterval = null
+    }
+  }
+
+  const addReservation = (playerId: string, playerName: string, reservedForMs: number) => {
+    reservationNow.value = Date.now()
+    reservations.value.set(playerId, { playerName, deadline: reservationNow.value + reservedForMs })
+    if (!reservationInterval) reservationInterval = setInterval(tickReservations, 250)
+  }
+
+  const removeReservationByName = (playerName: string) => {
+    for (const [playerId, r] of reservations.value) {
+      if (r.playerName === playerName) reservations.value.delete(playerId)
+    }
+  }
+
+  const clearReservations = () => {
+    reservations.value.clear()
+  }
+
+  const reservationList = computed(() =>
+    Array.from(reservations.value.entries()).map(([playerId, r]) => ({
+      playerId,
+      playerName: r.playerName,
+      remainingSeconds: Math.max(0, Math.ceil((r.deadline - reservationNow.value) / 1000)),
+    })),
+  )
+
   const timerThreshold = computed(() => Math.floor(baseTimerTurn.value * 0.5))
   const storyTimerThreshold = computed(() => Math.floor(baseTimerStory.value * 0.5))
 
@@ -140,5 +185,9 @@ export const useTimerStore = defineStore('timer', () => {
     restoreTimer,
     restoreStoryTimer,
     syncFromDeadline,
+    reservationList,
+    addReservation,
+    removeReservationByName,
+    clearReservations,
   }
 })

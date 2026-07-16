@@ -3,6 +3,34 @@
 Histórico de mudanças concluídas. Os docs em `src/docs/` descrevem só o **estado
 atual**; o que **mudou** e por quê mora aqui.
 
+## 2026-07-15 — Feature: poderes do dono da sala no `RoomManageModal`
+
+Primeira fatia do backlog registrado em `PROJECT_STATE.md` (2026-07-13) —
+"Poderes do dono da sala", 100% frontend.
+
+- **Reiniciar o jogo a qualquer momento:** `RoomManageModal` ganhou uma seção
+  "Zona de risco" com um botão "Reiniciar jogo", atrás de um
+  `BaseConfirmModal` (`danger`) — reaproveita o `emitResetGame`/`reset-game`
+  que já existia (antes só acionável por `EndedView` após o fim natural do
+  jogo, sem confirmação).
+- **Aviso de alterações não salvas:** fechar o modal (botão × ou clique no
+  backdrop) com um rascunho de configuração pendente (`hasChanges` de
+  `useRoomConfigForm`) agora abre um `BaseConfirmModal` perguntando se deve
+  descartar; sem alterações, fecha direto como antes.
+- **Auto-fechar ao salvar:** `RoomManageModal` passa a chamar
+  `useRoomConfigForm(() => emit('close'))` — o mesmo padrão de callback
+  `onSave` que `ConfigView` já usava, só que nunca tinha sido passado aqui.
+- **Contagem regressiva da reserva de vaga (60s):** `stores/timer.ts` ganhou
+  `reservationList`/`addReservation`/`removeReservationByName`/
+  `clearReservations` — mesmo padrão deadline-based dos timers de
+  turno/narração, com um `setInterval` que só roda enquanto há reserva
+  pendente. `stores/socket.ts` alimenta isso a partir de
+  `player-disconnected` (que antes só abria um toast de disparo único com
+  `reservedFor`) e limpa em `player-reconnected`/`game-reset`.
+  `RoomManageModal` mostra a lista ao vivo numa seção "Vagas reservadas" —
+  suficiente para o requisito de "visível pelo menos ao dono", já que o modal
+  só é montado para o dono da sala.
+
 ## 2026-07-13 — Fix: barra de progresso do `TheTimer` e cards revelados na tela de espera
 
 - **Fix (borda arredondada esticada):** `TheTimer` usava

@@ -37,7 +37,8 @@
 - **`cards`** — baralho embaralhado, mão exibida/selecionada, `dealCards`, `shuffle`.
 - **`timer`** — cronômetros de cards e narração, **baseados em deadline** (imunes
   ao congelamento de `setInterval` em segundo plano); `syncFromDeadline` recalcula
-  ao voltar o foco.
+  ao voltar o foco. Também guarda as contagens regressivas de reserva de vaga
+  (60s após desconexão), mesmo padrão deadline-based.
 - **`global`** — a fila de notificações (toast).
 
 Para evitar import circular, `settings` recebe callbacks (`setNavigateCallback`,
@@ -67,10 +68,13 @@ de um round-trip ao servidor só para trocar de tela.
   distinções locais do cliente (ver `storylic-api`).
 - **Dono da sala:** `isOwner` (store `socket`) vem do servidor em `join-ack`
   (`isCreator`) e `rejoin-ack` (`isOwner`) — nunca inferido no cliente, e
-  estável através de reconexão. Depois da criação, o dono ajusta config e
-  remove jogadores pelo painel `RoomManageModal` (botão flutuante em
-  `App.vue`, visível em qualquer estado de sala ativa — kick funciona lobby
-  e mid-jogo, reconfigurar só no lobby).
+  estável através de reconexão. Depois da criação, o dono ajusta config,
+  remove jogadores e reinicia o jogo pelo painel `RoomManageModal` (botão
+  flutuante em `App.vue`, visível em qualquer estado de sala ativa — kick e
+  reset funcionam lobby e mid-jogo, reconfigurar só no lobby). O painel
+  também mostra, ao vivo, a contagem regressiva de vagas reservadas por
+  desconexão (`stores/timer.ts` — `reservationList`, alimentado pelos
+  eventos `player-disconnected`/`player-reconnected`).
 
 ## Conexão e resiliência ✅
 

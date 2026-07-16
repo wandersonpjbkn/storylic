@@ -394,6 +394,7 @@ export const useSocketStore = defineStore('socket', () => {
         timerStory?: number
         turns?: number
       } = {}) => {
+        storeTimer.clearReservations()
         if (reason === 'new-game') {
           if (timerTurn) storeTimer.baseTimerTurn = timerTurn
           if (timerStory) storeTimer.baseTimerStory = timerStory
@@ -460,6 +461,7 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value.on(
       SocketEvents.ON_PLAYER_DISCONNECTED,
       ({
+        playerId,
         playerName,
         reservedFor,
       }: {
@@ -473,6 +475,7 @@ export const useSocketStore = defineStore('socket', () => {
           type: 'warning',
           duration: reservedFor,
         })
+        storeTimer.addReservation(playerId, playerName, reservedFor)
       },
     )
 
@@ -486,6 +489,7 @@ export const useSocketStore = defineStore('socket', () => {
           type: 'success',
           duration: 3000,
         })
+        storeTimer.removeReservationByName(playerName)
       },
     )
   }

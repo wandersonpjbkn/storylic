@@ -37,12 +37,8 @@ const announcement = computed(() => {
     <div class="flex items-baseline justify-center gap-1 mb-4" aria-hidden="true">
       <span
         :class="[
-          'sl-timer__num font-black tabular-nums leading-none transition-all duration-300',
-          phase === 'critical'
-            ? 'text-7xl animate-pulse'
-            : phase === 'warning'
-              ? 'text-6xl'
-              : 'text-5xl',
+          'sl-timer__num font-black tabular-nums leading-none transition-all duration-300 text-5xl',
+          { 'animate-pulse': phase === 'critical' },
         ]"
         >{{ value }}</span
       >

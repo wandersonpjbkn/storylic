@@ -93,4 +93,52 @@ describe('timer store (deadline-based)', () => {
     expect(timer.timerStory).toBe(45)
     expect(timer.isTurnRunning).toBe(false)
   })
+
+  it('addReservation conta regressivamente e some sozinha ao expirar', () => {
+    const timer = useTimerStore()
+    timer.addReservation('p1', 'Ana', 10_000)
+
+    expect(timer.reservationList).toEqual([
+      { playerId: 'p1', playerName: 'Ana', remainingSeconds: 10 },
+    ])
+
+    vi.advanceTimersByTime(4000)
+    expect(timer.reservationList[0]?.remainingSeconds).toBe(6)
+
+    vi.advanceTimersByTime(6000)
+    expect(timer.reservationList).toEqual([])
+  })
+
+  it('removeReservationByName tira a reserva antes de expirar (reconexão)', () => {
+    const timer = useTimerStore()
+    timer.addReservation('p1', 'Ana', 60_000)
+    timer.removeReservationByName('Ana')
+
+    expect(timer.reservationList).toEqual([])
+  })
+
+  it('clearReservations esvazia tudo de uma vez', () => {
+    const timer = useTimerStore()
+    timer.addReservation('p1', 'Ana', 60_000)
+    timer.addReservation('p2', 'Bruno', 60_000)
+
+    timer.clearReservations()
+
+    expect(timer.reservationList).toEqual([])
+  })
+
+  it('múltiplas reservas concorrentes contam independentemente', () => {
+    const timer = useTimerStore()
+    timer.addReservation('p1', 'Ana', 10_000)
+    timer.addReservation('p2', 'Bruno', 20_000)
+
+    vi.advanceTimersByTime(5000)
+
+    expect(timer.reservationList).toEqual(
+      expect.arrayContaining([
+        { playerId: 'p1', playerName: 'Ana', remainingSeconds: 5 },
+        { playerId: 'p2', playerName: 'Bruno', remainingSeconds: 15 },
+      ]),
+    )
+  })
 })

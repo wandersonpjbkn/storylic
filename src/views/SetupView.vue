@@ -75,6 +75,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <!-- form to return to room -->
   <form
     v-if="storeSocket.activeSession"
     class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20"
@@ -131,19 +132,9 @@ onMounted(() => {
     </button>
   </form>
 
-  <BaseConfirmModal
-    v-if="showAbandonConfirm"
-    title="Sair desta sala?"
-    description="Você não poderá mais voltar para esta sala depois de sair. Se caiu por engano, feche esta janela e volte em vez de sair."
-    confirm-label="Sim, sair"
-    cancel-label="Voltar"
-    danger
-    @confirm="abandonRoom"
-    @cancel="showAbandonConfirm = false"
-  />
-
+  <!-- form to join a room -->
   <form
-    v-else
+    v-else-if="!storeSocket.activeSession"
     class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20"
     @submit.prevent="submitJoin"
   >
@@ -229,4 +220,16 @@ onMounted(() => {
 
     <ServerSwitcher v-if="!isInviteMode" class="mt-4" />
   </form>
+
+  <!-- abandon confirm modal -->
+  <BaseConfirmModal
+    v-if="showAbandonConfirm"
+    title="Sair desta sala?"
+    description="Você não poderá mais voltar para esta sala depois de sair. Se caiu por engano, feche esta janela e volte em vez de sair."
+    confirm-label="Sim, sair"
+    cancel-label="Voltar"
+    danger
+    @confirm="abandonRoom"
+    @cancel="showAbandonConfirm = false"
+  />
 </template>
